@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+// Import statements for using well-known types.
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+enum BasicTestEnum {
+  BASIC_TEST_ENUM_UNSPECIFIED = 0;
+  BASIC_TEST_ENUM_ONE = 1;
+  BASIC_TEST_ENUM_TWO = 2;
+  BASIC_TEST_ENUM_THREE = 3;
+}
+
+message BasicTestMessage {
+  double double_field = 1;
+  float float_field = 2;
+  int32 int32_field = 3;
+  int64 int64_field = 4;
+  uint32 uint32_field = 5;
+  uint64 uint64_field = 6;
+  sint32 sint32_field = 7;
+  sint64 sint64_field = 8;
+  fixed32 fixed32_field = 9;
+  fixed64 fixed64_field = 10;
+  sfixed32 sfixed32_field = 11;
+  sfixed64 sfixed64_field = 12;
+
+  bool bool_field = 13;
+  string string_field = 14;
+  bytes bytes_field = 15;
+}
+
+message SpecialFieldTypesMessage {
+  optional string optional_string = 1;
+  repeated int32 repeated_int32 = 2;
+  repeated double repeated_packed_double = 3 [packed = true];
+}
+
+message MapMessage {
+  map<string, int32> string_int_map = 1;
+  map<int64, BasicTestMessage> int_message_map = 2;
+}
+
+message OneOfMessage {
+  oneof test_oneof {
+    string string_field = 1;
+    int32 int32_field = 2;
+    BasicTestMessage message_field = 3;
+  }
+}
+
+message OuterNestedMessage {
+  message InnerNestedMessage {
+    string inner_nested_string = 1;
+  }
+  string outer_nested_string = 1;
+  InnerNestedMessage inner_message = 2;
+}
+
+message GoogleWellKnownTypesMessage {
+  google.protobuf.Any any_field = 1;
+  google.protobuf.Timestamp timestamp_field = 2;
+  google.protobuf.Duration duration_field = 3;
+  google.protobuf.StringValue string_wrapper = 4;
+  google.protobuf.Int32Value int32_wrapper = 5;
+  google.protobuf.Struct struct_field = 6;
+  google.protobuf.Empty empty_field = 7;
+}
+
+message ReservedMessage {
+  reserved 2, 5, 7 to 11;
+  reserved "foo", "bar";
+}
+
+message EverythingMessage {
+  BasicTestMessage basic_message = 1;
+  SpecialFieldTypesMessage special_message = 2;
+  MapMessage map_message = 3;
+  OneOfMessage oneof_message = 4;
+  OuterNestedMessage nested_message = 5;
+  GoogleWellKnownTypesMessage well_known_types_message = 6;
+  BasicTestEnum basic_enum = 7;
+  repeated OuterNestedMessage.InnerNestedMessage repeated_inner_nested_message = 8;
+}
