@@ -1,7 +1,8 @@
 # `gdbuf`
-## Use your Protobuf messages in Godot
+Use your Protobuf messages in Godot
 
 ---
+
 Note that this software is early and development; don't expect everything to work.
 
 ## Quick Start
