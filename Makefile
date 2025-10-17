@@ -6,7 +6,7 @@ build:
 .PHONY: test-full
 test-full: test-build
 	mkdir -p test/out
-	go run main.go --proto-desc test/test.desc.binpb --out test/out
+	go run main.go --proto test/proto --out test/out
 
 .PHONY: test-build
 test-build: test/test.desc.binpb

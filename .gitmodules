@@ -1,0 +1,6 @@
+[submodule "godot-cpp"]
+	path = gdextension/godot-cpp
+	url = https://github.com/godotengine/godot-cpp.git
+[submodule "vcpkg"]
+	path = gdextension/vcpkg
+	url = https://github.com/microsoft/vcpkg.git

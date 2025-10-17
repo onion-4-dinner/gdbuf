@@ -1,0 +1,9 @@
+{
+  "_": "my build profile",
+  "type": "feature_profile",
+  "enabled_classes": [
+    "Node",
+    "Variant",
+    "OS"
+  ]
+}

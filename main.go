@@ -6,28 +6,29 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/LJ-Software/gdbuf/internal/codegen"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
+	"github.com/LJ-Software/gdbuf/internal/protoc"
 )
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 	logger.Info("starting gdbuf")
 
-	protoDescFilePathPtr := flag.String("proto-desc", "", "path to generated proto description file")
+	protoFilePathPtr := flag.String("proto", "", "path to proto definition files")
 	genOutDirPathPtr := flag.String("out", ".", "generated proto c++ code output path")
+	extensionNamePtr := flag.String("name", "gdbufgen", "name of the generated gdextension")
 
 	flag.Parse()
 
-	if len(*protoDescFilePathPtr) == 0 {
-		logger.Error("required argument --proto-desc not given")
+	if len(*protoFilePathPtr) == 0 {
+		logger.Error("required argument --proto not given")
 		os.Exit(1)
 	}
 
-	if err := checkPath(*protoDescFilePathPtr, false); err != nil {
-		logger.Error("invalid path for proto description file", "err", err)
+	if err := checkPath(*protoFilePathPtr, true); err != nil {
+		logger.Error("invalid path for proto files", "err", err)
 		os.Exit(1)
 	}
 
@@ -36,27 +37,40 @@ func main() {
 		os.Exit(1)
 	}
 
-	protoDescData, err := os.ReadFile(*protoDescFilePathPtr)
+	protoc, err := protoc.NewProtoCompiler(logger.WithGroup("protoc"))
 	if err != nil {
-		logger.Error("could not read proto description file", "err", err)
+		logger.Error("could not create new proto compiler", "err", err)
 		os.Exit(1)
 	}
 
-	var protoFileDescriptorSet descriptorpb.FileDescriptorSet
-	if err = proto.Unmarshal(protoDescData, &protoFileDescriptorSet); err != nil {
-		logger.Error("could not unmarshal proto description data", "err", err)
+	descriptorSet, err := protoc.BuildDescriptorSet(*protoFilePathPtr)
+	if err != nil {
+		logger.Error("could not build descriptor set for protobuf definitions", "err", err)
 		os.Exit(1)
 	}
 
-	codeGenerator, err := codegen.NewCodeGenerator(logger, *genOutDirPathPtr)
+	compiledProtoCppTempDirPath, err := protoc.CompileCpp(*protoFilePathPtr)
+	if err != nil {
+		logger.Error("could not compile proto cpp", "err", err)
+		os.Exit(1)
+	}
+
+	codeGenerator, err := codegen.NewCodeGenerator(logger, *genOutDirPathPtr, *extensionNamePtr, protoc.GetVersion())
 	if err != nil {
 		logger.Error("could not create new code generator", "err", err)
 		os.Exit(1)
 	}
 
-	err = codeGenerator.GenerateCode(protoFileDescriptorSet.File)
+	err = codeGenerator.GenerateCode(descriptorSet)
 	if err != nil {
 		logger.Error("problem generating code", "err", err)
+		os.Exit(1)
+	}
+
+	compiledProtoCppOutDirPath := filepath.Join(*genOutDirPathPtr, "src", "proto")
+	err = os.CopyFS(compiledProtoCppOutDirPath, os.DirFS(compiledProtoCppTempDirPath))
+	if err != nil {
+		logger.Error("problem copying compiled cpp proto to directory", "err", err)
 		os.Exit(1)
 	}
 }
