@@ -30,7 +30,7 @@ func NewCodeGenerator(logger *slog.Logger, destinationDirectoryPath, extensionNa
 
 	templates := tmpl.Templates()
 	for _, t := range templates {
-		logger.Info("template loaded", "name", t.Name())
+		logger.Debug("template loaded", "name", t.Name())
 	}
 
 	return &CodeGenerator{
