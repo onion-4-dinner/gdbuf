@@ -68,6 +68,16 @@ func (cg *CodeGenerator) generateCppFiles(protoFileDescriptor *descriptorpb.File
 		return fmt.Errorf("could not parse cpp template data: %w", err)
 	}
 
+	err = cg.executeTemplate("register_types.h.tmpl", filepath.Join(cg.destinationDirectoryPath, "src", "register_types.h"), cppTemplateData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	err = cg.executeTemplate("register_types.cpp.tmpl", filepath.Join(cg.destinationDirectoryPath, "src", "register_types.cpp"), cppTemplateData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
 	err = cg.executeTemplate("refcounted.h.tmpl", filepath.Join(cg.destinationDirectoryPath, "src", protoFileDescriptor.GetName()+".h"), cppTemplateData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)

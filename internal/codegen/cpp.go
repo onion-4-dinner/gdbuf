@@ -3,6 +3,7 @@ package codegen
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/huandu/xstrings"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -26,7 +27,7 @@ type MessageField struct {
 func newCppTemplateData(protoFileDescriptor *descriptorpb.FileDescriptorProto) (*cppFileTemplateData, error) {
 	var cppTemplateData cppFileTemplateData
 
-	cppTemplateData.FileName = xstrings.ToPascalCase(filepath.Base(protoFileDescriptor.GetName()))
+	cppTemplateData.FileName = xstrings.ToPascalCase(strings.TrimSuffix(filepath.Base(protoFileDescriptor.GetName()), ".proto"))
 
 	for _, message := range protoFileDescriptor.GetMessageType() {
 		fields := []MessageField{}
