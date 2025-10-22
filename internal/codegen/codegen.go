@@ -45,6 +45,7 @@ func NewCodeGenerator(logger *slog.Logger, destinationDirectoryPath, extensionNa
 func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDescriptorProto) error {
 	for _, protoFileDescriptor := range fileDescriptorSet {
 		fileName := protoFileDescriptor.GetName()
+		// TODO: gen the one time files before the per-proto files
 		cg.logger.Info("processing file", "name", fileName)
 		if err := cg.generateCppFiles(protoFileDescriptor); err != nil {
 			return fmt.Errorf("problem generating cpp file at %s: %w", filepath.Join(cg.destinationDirectoryPath, fileName), err)
