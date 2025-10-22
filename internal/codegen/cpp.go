@@ -9,9 +9,13 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-type cppFileTemplateData struct {
+type protoCppFileTemplateData struct {
 	FileName string
 	Messages []Message
+}
+
+type protoCppOneTimeTemplateData struct {
+	Classes []string
 }
 
 type Message struct {
@@ -24,8 +28,8 @@ type MessageField struct {
 	GodotType string
 }
 
-func newCppTemplateData(protoFileDescriptor *descriptorpb.FileDescriptorProto) (*cppFileTemplateData, error) {
-	var cppTemplateData cppFileTemplateData
+func newCppTemplateData(protoFileDescriptor *descriptorpb.FileDescriptorProto) (*protoCppFileTemplateData, error) {
+	var cppTemplateData protoCppFileTemplateData
 
 	cppTemplateData.FileName = xstrings.ToPascalCase(strings.TrimSuffix(filepath.Base(protoFileDescriptor.GetName()), ".proto"))
 
@@ -48,4 +52,10 @@ func newCppTemplateData(protoFileDescriptor *descriptorpb.FileDescriptorProto) (
 	}
 
 	return &cppTemplateData, nil
+}
+
+func newProtoCppOneTimeTemplateData(classNames []string) (*protoCppOneTimeTemplateData, error) {
+	return &protoCppOneTimeTemplateData{
+		Classes: classNames,
+	}, nil
 }

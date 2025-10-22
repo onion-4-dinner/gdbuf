@@ -43,14 +43,20 @@ func NewCodeGenerator(logger *slog.Logger, destinationDirectoryPath, extensionNa
 }
 
 func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDescriptorProto) error {
+	// TODO: gen the one time files before the per-proto files
+	// generate once per gdextension
+	if err := cg.generateGdextensionBuildFiles(cg.extensionName, cg.protobufVersion); err != nil {
+		return fmt.Errorf("problem generating gdextension build files at %s: %w", cg.destinationDirectoryPath, err)
+	}
+	if err := cg.generateProtoCppOneTimeFiles(); err != nil {
+		return fmt.Errorf("problem generating gdextension build files at %s: %w", cg.destinationDirectoryPath, err)
+	}
+
+	// generate for each proto file
 	for _, protoFileDescriptor := range fileDescriptorSet {
 		fileName := protoFileDescriptor.GetName()
-		// TODO: gen the one time files before the per-proto files
 		cg.logger.Info("processing file", "name", fileName)
-		if err := cg.generateCppFiles(protoFileDescriptor); err != nil {
-			return fmt.Errorf("problem generating cpp file at %s: %w", filepath.Join(cg.destinationDirectoryPath, fileName), err)
-		}
-		if err := cg.generateGdextensionBuildFiles(cg.extensionName, cg.protobufVersion); err != nil {
+		if err := cg.generateProtoCppFile(protoFileDescriptor); err != nil {
 			return fmt.Errorf("problem generating cpp file at %s: %w", filepath.Join(cg.destinationDirectoryPath, fileName), err)
 		}
 	}
@@ -58,7 +64,7 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 	return nil
 }
 
-func (cg *CodeGenerator) generateCppFiles(protoFileDescriptor *descriptorpb.FileDescriptorProto) error {
+func (cg *CodeGenerator) generateProtoCppFile(protoFileDescriptor *descriptorpb.FileDescriptorProto) error {
 	err := os.MkdirAll(filepath.Join(cg.destinationDirectoryPath, "src"), 0755)
 	if err != nil {
 		return fmt.Errorf("could not make cpp output directory: %w", err)
@@ -114,6 +120,29 @@ func (cg *CodeGenerator) generateGdextensionBuildFiles(extensionName, protobufVe
 	}
 
 	err = cg.executeTemplate("gde-protobuf.gdextension.tmpl", filepath.Join(cg.destinationDirectoryPath, "out", extensionName, fmt.Sprintf("%s.gdextension", extensionName)), gdextensionTemplateData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	return nil
+}
+
+func (cg *CodeGenerator) generateProtoCppOneTimeFiles() error {
+	err := os.MkdirAll(filepath.Join(cg.destinationDirectoryPath, "src"), 0755)
+	if err != nil {
+		return fmt.Errorf("could not make cpp output directory: %w", err)
+	}
+
+	protoCppOneTimeTemplateData, err := newProtoCppOneTimeTemplateData([]string{})
+	if err != nil {
+		return fmt.Errorf("could not parse cpp template data: %w", err)
+	}
+
+	err = cg.executeTemplate("register_types.h.tmpl", filepath.Join(cg.destinationDirectoryPath, "src", "register_types.h"), protoCppOneTimeTemplateData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+	err = cg.executeTemplate("register_types.cpp.tmpl", filepath.Join(cg.destinationDirectoryPath, "src", "register_types.cpp"), protoCppOneTimeTemplateData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
 	}
