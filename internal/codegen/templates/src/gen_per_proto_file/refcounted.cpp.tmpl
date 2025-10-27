@@ -2,8 +2,8 @@
 #pragma once
 
 #include <string>
-#include "{{ .ClassName }}.h"
-#include "proto/cpp/{{ .ClassName }}.pb.h"
+#include "{{ .FileName }}.h"
+#include "proto/cpp/{{ .FileName }}.pb.h"
 
 void {{ .ClassName }}::_bind_methods() {
   godot::classDB::bind_method(D_METHOD("GetFileName"), "String"), &{{ .ClassName }}::GetFileName);

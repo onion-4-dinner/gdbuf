@@ -128,8 +128,8 @@ func extractProtoData(fileDescriptorSet []*descriptorpb.FileDescriptorProto) (*p
 	for _, file := range fileDescriptorSet {
 		var protoFile protoFile
 		protoFile.ProtoPath = file.GetName()
-		protoFile.FileName = filepath.Base(protoFile.ProtoPath)
-		protoFile.ClassName = xstrings.ToPascalCase(strings.TrimSuffix(protoFile.FileName, ".proto"))
+		protoFile.FileName = strings.TrimSuffix(filepath.Base(protoFile.ProtoPath), ".proto")
+		protoFile.ClassName = xstrings.ToPascalCase(protoFile.FileName)
 		for _, msg := range file.GetMessageType() {
 			var protoMessage protoMessage
 			protoMessage.MessageName = msg.GetName()
