@@ -1,6 +1,6 @@
 #include "register_types.h"
-{{ range .Classes }}
-#include "{{ . }}.h"
+{{ range .ProtoData.Files }}
+#include "{{ .ClassName }}.h"
 {{ end }}
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
@@ -11,8 +11,8 @@ using namespace godot;
 void initialize_gdextension_types(ModuleInitializationLevel p_level){
   if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
     return;
-  {{ range .Classes }}
-  GDREGISTER_CLASS({{ . }});
+  {{ range .ProtoData.Files }}
+  GDREGISTER_CLASS({{ .ClassName }});
   {{ end }}
 }
 

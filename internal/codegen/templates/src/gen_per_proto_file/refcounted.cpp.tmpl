@@ -2,13 +2,13 @@
 #pragma once
 
 #include <string>
-#include "{{ .FileName }}.h"
-#include "proto/cpp/{{ .FileName }}.pb.h"
+#include "{{ .ClassName }}.h"
+#include "proto/cpp/{{ .ClassName }}.pb.h"
 
-void {{ .FileName }}::_bind_methods() {
-  godot::classDB::bind_method(D_METHOD("GetFileName"), "String"), &{{ .FileName }}::GetFileName);
+void {{ .ClassName }}::_bind_methods() {
+  godot::classDB::bind_method(D_METHOD("GetFileName"), "String"), &{{ .ClassName }}::GetFileName);
 }
 
-String {{ .FileName }}::GetFileName() {
+String {{ .ClassName }}::GetFileName() {
   return fileName;
 }

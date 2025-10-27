@@ -4,12 +4,12 @@
 #include <string>
 #include "godot_cpp/classes/ref_counted.hpp"
 #include "godot_cpp/classes/wrapped.hpp"
-#include "proto/cpp/{{ .FileName }}.pb.h"
+#include "proto/cpp/{{ .ClassName }}.pb.h"
 
 using namespace godot;
 
-class {{ .FileName }} : public RefCounted {
-  GDCLASS({{ .FileName }}, RefCounted)
+class {{ .ClassName }} : public RefCounted {
+  GDCLASS({{ .ClassName }}, RefCounted)
 
   protected:
     static void _bind_methods();
@@ -18,7 +18,7 @@ class {{ .FileName }} : public RefCounted {
     static constexpr string fileName = "{{ .FileName }}";
 
   public:
-    {{ .FileName }}() = default;
-    ~{{ .FileName }}() override = default;
+    {{ .ClassName }}() = default;
+    ~{{ .ClassName }}() override = default;
     string GetFileName();
 }

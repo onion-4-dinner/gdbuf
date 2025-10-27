@@ -1,6 +1,6 @@
 # Project metadata
 cmake_minimum_required(VERSION 3.16)
-project({{ .ExtensionName }} VERSION 1.0 LANGUAGES CXX)
+project({{ .GDExtensionName }} VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -20,13 +20,13 @@ find_package(protobuf CONFIG REQUIRED)
 
 # Source files
 file(GLOB SOURCES "src/*.cpp")
-add_library({{ .ExtensionName }} SHARED ${SOURCES})
+add_library({{ .GDExtensionName }} SHARED ${SOURCES})
 
 # where to build it to
 set(OUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
 # setup dependencies
-target_link_libraries({{ .ExtensionName }} PRIVATE protobuf::libprotobuf)
+target_link_libraries({{ .GDExtensionName }} PRIVATE protobuf::libprotobuf)
 
 # setup godot-cpp
 set(GODOTCPP_BUILD_PROFILE "${CMAKE_SOURCE_DIR}/build_profile.json")
@@ -34,9 +34,9 @@ add_subdirectory(godot-cpp SYSTEM)
 get_target_property(GODOTCPP_SUFFIX godot::cpp GODOTCPP_SUFFIX)
 set(GODOTCPP_SUFFIX ${GODOTCPP_SUFFIX} CACHE INTERNAL "Godot CPP Suffix")
 
-target_link_libraries({{ .ExtensionName }} PRIVATE godot::cpp)
-set_target_properties({{ .ExtensionName }} PROPERTIES 
-  OUTPUT_NAME "{{ .ExtensionName }}${GODOTCPP_SUFFIX}"
+target_link_libraries({{ .GDExtensionName }} PRIVATE godot::cpp)
+set_target_properties({{ .GDExtensionName }} PROPERTIES 
+  OUTPUT_NAME "{{ .GDExtensionName }}${GODOTCPP_SUFFIX}"
   # Linux
   LIBRARY_OUTPUT_DIRECTORY "${OUT_DIR}"
   # Windows
