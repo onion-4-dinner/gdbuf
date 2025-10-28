@@ -7,9 +7,3 @@ build-linux:
 .PHONY: deps-update
 deps-update:
 	git submodule update --remote --recursive
-
-.PHONY: generate
-generate:
-	buf generate --template hearthlight-proto/public/buf.gen.yaml hearthlight-proto/public
-	mv gen src/proto
-

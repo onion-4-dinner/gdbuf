@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/LJ-Software/gdbuf/internal/codegen"
+	"github.com/LJ-Software/gdbuf/internal/gdextension"
 	"github.com/LJ-Software/gdbuf/internal/protoc"
 )
 
@@ -71,6 +72,14 @@ func main() {
 	err = os.CopyFS(compiledProtoCppOutDirPath, os.DirFS(compiledProtoCppTempDirPath))
 	if err != nil {
 		logger.Error("problem copying compiled cpp proto to directory", "err", err)
+		os.Exit(1)
+	}
+
+	gdExtensionBuilder := gdextension.NewGDExtensionBuilder(logger)
+
+	err = gdExtensionBuilder.Build(*genOutDirPathPtr)
+	if err != nil {
+		logger.Error("problem building gdextension", "err", err)
 		os.Exit(1)
 	}
 }
