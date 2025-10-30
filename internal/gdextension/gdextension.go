@@ -7,9 +7,10 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
-//go:embed build/*
+//go:embed all:build/*
 var buildEnvFS embed.FS
 
 type GDExtensionBuilder struct {
@@ -45,6 +46,9 @@ func (gde *GDExtensionBuilder) Build(customBuildFilesDir string) error {
 
 	// all files are in place, try to build
 	buildCmd := exec.Command("make", "build-linux")
+	buildCmd.Env = os.Environ()
+	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("VCPKG_ROOT=%s", filepath.Join(buildDir, "vcpkg")))
+	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("WORKSPACE=%s", buildDir))
 	buildCmd.Dir = buildDir
 	output, err := buildCmd.CombinedOutput()
 	if err != nil {

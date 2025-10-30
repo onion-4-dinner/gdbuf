@@ -14,7 +14,9 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 	logger.Info("starting gdbuf")
 
 	protoFilePathPtr := flag.String("proto", "", "path to proto definition files")

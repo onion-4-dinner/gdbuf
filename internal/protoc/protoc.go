@@ -24,6 +24,7 @@ func NewProtoCompiler(logger *slog.Logger) (*ProtoCompiler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get protoc executable version information: %w", err)
 	}
+	logger.Debug("got protobuf version", "version", version)
 	return &ProtoCompiler{
 		logger:          logger,
 		protobufVersion: version,
@@ -98,8 +99,8 @@ func getProtocExecutableVersion() (string, error) {
 		return "", fmt.Errorf("could not build proto description file: %w", err)
 	}
 
-	versionParts := strings.Split(strings.TrimPrefix(string(protoVersionCmdOut), "libprotoc "), ".")
-	protoVersion := fmt.Sprintf("%s.%s", versionParts[1], versionParts[0])
+	versionParts := strings.Split(strings.ReplaceAll(strings.TrimPrefix(string(protoVersionCmdOut), "libprotoc "), "\n", ""), ".")
+	protoVersion := fmt.Sprintf("%s.%s.5", versionParts[1], versionParts[0]) // TODO: dont hardcode last part of version
 	return protoVersion, nil
 }
 
