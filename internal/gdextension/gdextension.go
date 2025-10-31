@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-//go:embed all:build/*
+//go:embed all:buildenv/*
 var buildEnvFS embed.FS
 
 type GDExtensionBuilder struct {
@@ -31,7 +31,7 @@ func (gde *GDExtensionBuilder) Build(customBuildFilesDir string) error {
 
 	gde.logger.Info("starting gdextension build", "build_dir", buildDir)
 
-	buildEnv, err := fs.Sub(buildEnvFS, "build")
+	buildEnv, err := fs.Sub(buildEnvFS, "buildenv")
 	if err != nil {
 		return fmt.Errorf("could not make build directory: %w", err)
 	}
@@ -50,9 +50,10 @@ func (gde *GDExtensionBuilder) Build(customBuildFilesDir string) error {
 	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("VCPKG_ROOT=%s", filepath.Join(buildDir, "vcpkg")))
 	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("WORKSPACE=%s", buildDir))
 	buildCmd.Dir = buildDir
-	output, err := buildCmd.CombinedOutput()
+	buildCmd.Stdout = os.Stdout
+	buildCmd.Stderr = os.Stderr
+	err = buildCmd.Run()
 	if err != nil {
-		gde.logger.Error("build error", "command", buildCmd.Args, "output", output)
 		return fmt.Errorf("build error: %w", err)
 	}
 	gde.logger.Info("build successful")
