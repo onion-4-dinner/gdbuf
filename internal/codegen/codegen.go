@@ -35,10 +35,11 @@ type protoData struct {
 }
 
 type protoFile struct {
-	FileName  string
-	ProtoPath string // original path of the proto file in the proto module that was injested
-	ClassName string // camel case without .proto suffix
-	Messages  []protoMessage
+	FileName             string
+	ProtoPath            string // original path of the proto file in the proto module that was injested
+	ProtoPathNoExtension string // original path of the proto file in the proto module that was injested
+	ClassName            string // camel case without .proto suffix
+	Messages             []protoMessage
 }
 
 type protoMessage struct {
@@ -128,7 +129,8 @@ func extractProtoData(fileDescriptorSet []*descriptorpb.FileDescriptorProto) (*p
 	for _, file := range fileDescriptorSet {
 		var protoFile protoFile
 		protoFile.ProtoPath = file.GetName()
-		protoFile.FileName = strings.TrimSuffix(filepath.Base(protoFile.ProtoPath), ".proto")
+		protoFile.ProtoPathNoExtension = strings.TrimSuffix(protoFile.ProtoPath, ".proto")
+		protoFile.FileName = filepath.Base(protoFile.ProtoPathNoExtension)
 		protoFile.ClassName = xstrings.ToPascalCase(protoFile.FileName)
 		for _, msg := range file.GetMessageType() {
 			var protoMessage protoMessage
