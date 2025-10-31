@@ -4,9 +4,15 @@ build:
 	go build -o bin/gdbuf .
 
 .PHONY: test-full
-test-full: test-build
+test-full: test-clean test-build
 	mkdir -p test/out
-	go run main.go --proto-desc test/test.desc.binpb --out test/out
+	mkdir -p test/genout
+	go run main.go --proto test/proto --genout test/genout --out test/out
+
+.PHONY: test-clean
+test-clean:
+	rm -r test/out
+	rm -r test/genout
 
 .PHONY: test-build
 test-build: test/test.desc.binpb
