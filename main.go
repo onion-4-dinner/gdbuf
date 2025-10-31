@@ -20,8 +20,9 @@ func main() {
 	logger.Info("starting gdbuf")
 
 	protoFilePathPtr := flag.String("proto", "", "path to proto definition files")
-	genOutDirPathPtr := flag.String("out", ".", "generated proto c++ code output path")
+	genOutDirPathPtr := flag.String("genout", ".", "generated proto c++ code output path")
 	extensionNamePtr := flag.String("name", "gdbufgen", "name of the generated gdextension")
+	gdextensionOutDirPathPtr := flag.String("out", "./out", "output directory location of the generated gdextension")
 
 	flag.Parse()
 
@@ -36,7 +37,12 @@ func main() {
 	}
 
 	if err := checkPath(*genOutDirPathPtr, true); err != nil {
-		logger.Error("invalid path for output directory", "err", err)
+		logger.Error("invalid path for code gen output directory", "err", err)
+		os.Exit(1)
+	}
+
+	if err := checkPath(*gdextensionOutDirPathPtr, true); err != nil {
+		logger.Error("invalid path for gdextension output directory", "err", err)
 		os.Exit(1)
 	}
 
@@ -79,7 +85,7 @@ func main() {
 
 	gdExtensionBuilder := gdextension.NewGDExtensionBuilder(logger)
 
-	err = gdExtensionBuilder.Build(*genOutDirPathPtr)
+	err = gdExtensionBuilder.Build(*genOutDirPathPtr, *gdextensionOutDirPathPtr)
 	if err != nil {
 		logger.Error("problem building gdextension", "err", err)
 		os.Exit(1)

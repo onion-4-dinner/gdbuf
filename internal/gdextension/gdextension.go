@@ -23,7 +23,7 @@ func NewGDExtensionBuilder(logger *slog.Logger) *GDExtensionBuilder {
 	}
 }
 
-func (gde *GDExtensionBuilder) Build(customBuildFilesDir string) error {
+func (gde *GDExtensionBuilder) Build(customBuildFilesDir, outputDir string) error {
 	buildDir, err := os.MkdirTemp("", "gdbuf-build-")
 	if err != nil {
 		return fmt.Errorf("could not make build directory: %w", err)
@@ -57,5 +57,18 @@ func (gde *GDExtensionBuilder) Build(customBuildFilesDir string) error {
 		return fmt.Errorf("build error: %w", err)
 	}
 	gde.logger.Info("build successful")
+
+	if err = os.CopyFS(filepath.Join(buildDir, "out", "dist"), os.DirFS(filepath.Join(buildDir, "build", "bin"))); err != nil {
+		return fmt.Errorf("could not copy build output to output directory: %w", err)
+	}
+
+	if err = os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("could not create output directory: %w", err)
+	}
+
+	if err = os.CopyFS(outputDir, os.DirFS(filepath.Join(buildDir, "out"))); err != nil {
+		return fmt.Errorf("could not copy build output to output directory: %w", err)
+	}
+
 	return nil
 }

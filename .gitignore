@@ -33,4 +33,5 @@ go.work.sum
 
 test/*.desc.binpb
 test/out/
+test/genout/
 bin/
