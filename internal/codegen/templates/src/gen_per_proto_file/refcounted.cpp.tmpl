@@ -7,9 +7,9 @@
 const std::string {{ .ClassName }}::FILE_NAME = "{{ .FileName }}";
 
 void {{ .ClassName }}::_bind_methods() {
-  godot::ClassDB::bind_method(D_METHOD("GetFileName", "String"), &{{ .ClassName }}::GetFileName);
+  godot::ClassDB::bind_method(D_METHOD("get_proto_file_name"), &{{ .ClassName }}::get_proto_file_name);
 }
 
-godot::String {{ .ClassName }}::GetFileName() const {
+godot::String {{ .ClassName }}::get_proto_file_name() const {
   return godot::String(FILE_NAME.c_str());
 }

@@ -6,11 +6,13 @@ build:
 .PHONY: test-full
 test-full: test-clean test-build
 	mkdir -p test/out
+	mkdir -p test/genout
 	go run main.go --proto test/proto --genout test/genout --out test/out
 
 .PHONY: test-clean
 test-clean:
 	rm -r test/out
+	rm -r test/genout
 
 .PHONY: test-build
 test-build: test/test.desc.binpb
