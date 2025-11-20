@@ -76,7 +76,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	compiledProtoCppOutDirPath := filepath.Join(*genOutDirPathPtr, "src", "proto")
+	compiledProtoCppOutDirPath := filepath.Join(*genOutDirPathPtr, "src")
 	err = os.CopyFS(compiledProtoCppOutDirPath, os.DirFS(compiledProtoCppTempDirPath))
 	if err != nil {
 		logger.Error("problem copying compiled cpp proto to directory", "err", err)

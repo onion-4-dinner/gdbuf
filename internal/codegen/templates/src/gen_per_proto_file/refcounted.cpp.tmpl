@@ -3,7 +3,7 @@
 {{- $protoFileNameNoExtension := base $protoPathNoExtension }}
 #include <string>
 #include "{{ $protoFileNameNoExtension }}.h"
-#include "proto/{{ $protoPathNoExtension }}.pb.h"
+#include "{{ $protoFileNameNoExtension }}.pb.h"
 #include <cstdint> // Required for int64_t
 #include <godot_cpp/variant/string.hpp>
 
@@ -33,7 +33,7 @@ godot::String {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::get_p
 }
 
 void {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snakecase .FieldName }}) {
-  {{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
+  this.{{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
 }
 {{- end }}
 {{- end }}

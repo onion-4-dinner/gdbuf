@@ -114,8 +114,8 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 	for _, file := range templateData.ProtoData.Files {
 		cg.logger.Info("processing file", "name", file.ProtoPath)
 		thisProtoFileTemplates := map[string]string{
-			"refcounted.h.tmpl":   fmt.Sprintf("src/%s.h", strings.TrimSuffix(filepath.Base(file.ProtoPath), ".proto")),
-			"refcounted.cpp.tmpl": fmt.Sprintf("src/%s.cpp", strings.TrimSuffix(filepath.Base(file.ProtoPath), ".proto")),
+			"refcounted.h.tmpl":   fmt.Sprintf("src/%s.h", strings.TrimSuffix(file.ProtoPath, ".proto")),
+			"refcounted.cpp.tmpl": fmt.Sprintf("src/%s.cpp", strings.TrimSuffix(file.ProtoPath, ".proto")),
 		}
 		for templateName, outputPath := range thisProtoFileTemplates {
 			err := os.MkdirAll(filepath.Dir(filepath.Join(cg.destinationDirectoryPath, outputPath)), 0755)
