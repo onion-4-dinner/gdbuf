@@ -29,7 +29,7 @@ class {{ $className }} : public godot::RefCounted {
   public:
     {{ $className }}() = default;
     ~{{ $className }}() override = default;
-    godot::String get_proto_file_name();
+    static godot::String get_proto_file_name();
 
     godot::PackedByteArray to_byte_array();
     void from_byte_array(godot::PackedByteArray &p_bytes);

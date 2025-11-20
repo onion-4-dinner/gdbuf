@@ -19,7 +19,7 @@ void {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::_bind_methods(
   godot::ClassDB::bind_method(godot::D_METHOD("from_byte_array", "PackedByteArray"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::from_byte_array);
   {{- range .Fields }}
   godot::ClassDB::bind_method(godot::D_METHOD("get_{{ snakecase .FieldName }}"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::get_{{ snakecase .FieldName }});
-  godot::ClassDB::bind_method(godot::D_METHOD("set_{{ snakecase .FieldName }}", "value") &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::set_{{ snakecase .FieldName }});
+  godot::ClassDB::bind_method(godot::D_METHOD("set_{{ snakecase .FieldName }}", "value"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::set_{{ snakecase .FieldName }});
   {{- end }}
 }
 
@@ -33,7 +33,7 @@ godot::String {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::get_p
 }
 
 void {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snakecase .FieldName }}) {
-  this.{{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
+  this->{{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
 }
 {{- end }}
 {{- end }}
