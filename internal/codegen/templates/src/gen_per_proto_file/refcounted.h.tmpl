@@ -21,22 +21,30 @@ class {{ $className }} : public godot::RefCounted {
     static void _bind_methods();
 
   private:
-    static const std::string FILE_NAME;
     {{- range .Fields }}
+      {{- if .IsCustomType }}
+    {{ .GodotType }}* {{ snakecase .FieldName }}{};
+      {{- else }}
     {{ .GodotType }} {{ snakecase .FieldName }}{};
+      {{- end }}
     {{- end }}
 
   public:
     {{ $className }}() = default;
     ~{{ $className }}() override = default;
-    static godot::String get_proto_file_name();
+    godot::String get_proto_file_name();
 
     godot::PackedByteArray to_byte_array();
     void from_byte_array(godot::PackedByteArray &p_bytes);
 
     {{- range .Fields }}
+      {{- if .IsCustomType }}
+    {{ .GodotType }}* get_{{ .FieldName }}();
+    void set_{{ snakecase .FieldName }}({{ .GodotType }}* p_{{ snakecase .FieldName }});
+      {{- else }}
     {{ .GodotType }} get_{{ .FieldName }}();
     void set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snakecase .FieldName }});
+      {{- end }}
     {{- end }}
 };
 {{- end }}

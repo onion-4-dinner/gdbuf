@@ -8,32 +8,43 @@
 #include <godot_cpp/variant/string.hpp>
 
 
+namespace {{ snakecase $protoFileNameNoExtension }} {
 {{- range .Messages }}
 {{- $className := camelcase .MessageName }}
 
-const std::string {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::FILE_NAME = "{{ $protoFileNameNoExtension }}";
-
-void {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::_bind_methods() {
-  godot::ClassDB::bind_method(godot::D_METHOD("get_proto_file_name"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::get_proto_file_name);
-  godot::ClassDB::bind_method(godot::D_METHOD("to_byte_array"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::to_byte_array);
-  godot::ClassDB::bind_method(godot::D_METHOD("from_byte_array", "PackedByteArray"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::from_byte_array);
+void {{ $className }}::_bind_methods() {
+  godot::ClassDB::bind_method(godot::D_METHOD("get_proto_file_name"), &{{ $className }}::get_proto_file_name);
+  godot::ClassDB::bind_method(godot::D_METHOD("to_byte_array"), &{{ $className }}::to_byte_array);
+  godot::ClassDB::bind_method(godot::D_METHOD("from_byte_array", "PackedByteArray"), &{{ $className }}::from_byte_array);
   {{- range .Fields }}
-  godot::ClassDB::bind_method(godot::D_METHOD("get_{{ snakecase .FieldName }}"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::get_{{ snakecase .FieldName }});
-  godot::ClassDB::bind_method(godot::D_METHOD("set_{{ snakecase .FieldName }}", "value"), &{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::set_{{ snakecase .FieldName }});
+  godot::ClassDB::bind_method(godot::D_METHOD("get_{{ snakecase .FieldName }}"), &{{ $className }}::get_{{ snakecase .FieldName }});
+  godot::ClassDB::bind_method(godot::D_METHOD("set_{{ snakecase .FieldName }}", "value"), &{{ $className }}::set_{{ snakecase .FieldName }});
   {{- end }}
 }
 
-godot::String {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::get_proto_file_name() {
-  return godot::String(FILE_NAME.c_str());
+godot::String {{ $className }}::get_proto_file_name() {
+  return godot::String("{{ $protoFileNameNoExtension }}");
 }
 
 {{- range .Fields }}
-{{ .GodotType }} {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::get_{{ snakecase .FieldName }}() {
+  {{- if .IsCustomType }}
+{{ .GodotType }}* {{ $className }}::get_{{ snakecase .FieldName }}() {
   return {{ snakecase .FieldName }};
 }
 
-void {{ snakecase $protoFileNameNoExtension }}::{{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snakecase .FieldName }}) {
+void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }}* p_{{ snakecase .FieldName }}) {
   this->{{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
 }
+  {{- else }}
+{{ .GodotType }} {{ $className }}::get_{{ snakecase .FieldName }}() {
+  return {{ snakecase .FieldName }};
+}
+
+void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snakecase .FieldName }}) {
+  this->{{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
+}
+  {{- end }}
+
 {{- end }}
 {{- end }}
+}
