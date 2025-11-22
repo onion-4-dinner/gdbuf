@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -70,8 +71,7 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descrip
 }
 
 func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
-	compileOutDir := filepath.Join(os.TempDir(), "gdbuf-build")
-	err := os.MkdirAll(compileOutDir, 0755)
+	tempProtocBuildDir, err := os.MkdirTemp("", "gdbuf-build-")
 	if err != nil {
 		return "", fmt.Errorf("could not make temp directory for proto cpp build: %w", err)
 	}
@@ -80,7 +80,7 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not get proto files from %s: %w", protoFilesDirPath, err)
 	}
-	compileCppCmd := exec.Command("protoc", append([]string{fmt.Sprintf("--cpp_out=%s", compileOutDir)}, protoFilePaths...)...)
+	compileCppCmd := exec.Command("protoc", append([]string{fmt.Sprintf("--cpp_out=%s", tempProtocBuildDir)}, protoFilePaths...)...)
 
 	var stderr bytes.Buffer
 	compileCppCmd.Stderr = &stderr
@@ -90,7 +90,7 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
 		return "", fmt.Errorf("could not compile cpp proto files with cmd [%v]: %s", compileCppCmd.Args, stderr.String())
 	}
 
-	return compileOutDir, nil
+	return tempProtocBuildDir, nil
 }
 
 func getProtocExecutableVersion() (string, error) {
@@ -99,7 +99,14 @@ func getProtocExecutableVersion() (string, error) {
 		return "", fmt.Errorf("could not build proto description file: %w", err)
 	}
 
-	versionParts := strings.Split(strings.ReplaceAll(strings.TrimPrefix(string(protoVersionCmdOut), "libprotoc "), "\n", ""), ".")
+	// Output format: "libprotoc 25.1" or similar
+	re := regexp.MustCompile(`libprotoc (\d+\.\d+)`)
+	matches := re.FindStringSubmatch(string(protoVersionCmdOut))
+	if len(matches) < 2 {
+		return "", fmt.Errorf("could not parse protoc version from output: %s", string(protoVersionCmdOut))
+	}
+
+	versionParts := strings.Split(matches[1], ".")
 	protoVersion := fmt.Sprintf("%s.%s.5", versionParts[1], versionParts[0]) // TODO: dont hardcode last part of version
 	return protoVersion, nil
 }

@@ -40,11 +40,6 @@ message SpecialFieldTypesMessage {
   repeated double repeated_packed_double = 3 [packed = true];
 }
 
-// message MapMessage {
-//   map<string, int32> string_int_map = 1;
-//   map<int64, BasicTestMessage> int_message_map = 2;
-// }
-
 message OneOfMessage {
   oneof test_oneof {
     string string_field = 1;
@@ -52,14 +47,6 @@ message OneOfMessage {
     BasicTestMessage message_field = 3;
   }
 }
-
-// message OuterNestedMessage {
-//   message InnerNestedMessage {
-//     string inner_nested_string = 1;
-//   }
-//   string outer_nested_string = 1;
-//   InnerNestedMessage inner_message = 2;
-// }
 
 message GoogleWellKnownTypesMessage {
   google.protobuf.Any any_field = 1;
@@ -84,5 +71,4 @@ message EverythingMessage {
   // OuterNestedMessage nested_message = 5;
   GoogleWellKnownTypesMessage well_known_types_message = 6;
   BasicTestEnum basic_enum = 7;
-  // repeated OuterNestedMessage.InnerNestedMessage repeated_inner_nested_message = 8;
 }

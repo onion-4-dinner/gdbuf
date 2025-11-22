@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"text/template"
 
@@ -142,16 +141,16 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.FileDescriptorProto) (*protoData, error) {
 	var protoData protoData
 	// one loop through to get a mapping of filename and message name
-	var fileToMsgs map[string][]string = make(map[string][]string)
-	var fileToEnum map[string][]string = make(map[string][]string)
+	var protoFileToDeclaredMessageNames map[string][]string = make(map[string][]string)
+	var protoFileToDeclaredEnumNames map[string][]string = make(map[string][]string)
 	for _, file := range fileDescriptorSet {
 		for _, msg := range file.GetMessageType() {
 			cg.logger.Debug("found message", "file", file.GetName(), "message", msg.GetName())
-			fileToMsgs[file.GetName()] = append(fileToMsgs[file.GetName()], msg.GetName())
+			protoFileToDeclaredMessageNames[file.GetName()] = append(protoFileToDeclaredMessageNames[file.GetName()], msg.GetName())
 		}
 		for _, enum := range file.GetEnumType() {
 			cg.logger.Debug("found enum", "file", file.GetName(), "enum", enum.GetName())
-			fileToEnum[file.GetName()] = append(fileToEnum[file.GetName()], enum.GetName())
+			protoFileToDeclaredEnumNames[file.GetName()] = append(protoFileToDeclaredEnumNames[file.GetName()], enum.GetName())
 		}
 	}
 
@@ -179,107 +178,16 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 				var protoMessageField protoMessageField
 				protoMessageField.FieldName = field.GetName()
 				protoMessageField.ProtoTypeName = field.GetTypeName()
-				fieldType := *field.GetType().Enum()
-				fieldTypeName := field.GetTypeName()[strings.LastIndex(field.GetTypeName(), ".")+1:]
-				godotType := "UNKNOWN"
-				var err error
-				switch fieldType {
-				case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
-					var srcFile string = ""
-					switch fieldTypeName {
-					case "Any":
-						fallthrough
-					case "Timestamp":
-						fallthrough
-					case "Duration":
-						fallthrough
-					case "StringValue":
-						fallthrough
-					case "Int32Value":
-						fallthrough
-					case "Struct":
-						fallthrough
-					case "ListValue":
-						fallthrough
-					case "Value":
-						fallthrough
-					case "Empty":
-						srcFile = "google::protobuf"
-					default:
-						for f, _ := range fileToMsgs {
-							if slices.Contains(fileToMsgs[f], fieldTypeName) {
-								srcFile = f
-								break
-							}
-						}
-					}
-					if srcFile == "" {
-						return nil, fmt.Errorf("could not find source file for message type: %s", fieldTypeName)
-					}
 
-					if srcFile == "google::protobuf" {
-						protoMessageField.IsCustomType = false
-						switch fieldTypeName {
-						case "Timestamp":
-							godotType = "int64_t"
-						case "Duration":
-							godotType = "double"
-						case "Struct":
-							godotType = "godot::Dictionary"
-						case "ListValue":
-							godotType = "godot::Array"
-						case "Value":
-							godotType = "godot::Variant"
-						case "Any":
-							godotType = "godot::Dictionary"
-						case "Empty":
-							godotType = "godot::Variant"
-						case "StringValue":
-							godotType = "godot::String"
-						case "Int32Value":
-							godotType = "int32_t"
-						case "BoolValue":
-							godotType = "bool"
-						default:
-							protoMessageField.IsCustomType = true
-							godotType = fmt.Sprintf("google::protobuf::%s", fieldTypeName)
-						}
-					} else {
-						protoMessageField.IsCustomType = true
-						if srcFile == protoFile.ProtoPath {
-							godotType = fieldTypeName
-						} else {
-							godotType = fmt.Sprintf("%s::%s", filepath.Base(strings.TrimSuffix(srcFile, ".proto")), fieldTypeName)
-						}
-					}
-				case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
-					var srcFile string = ""
-					for f, _ := range fileToEnum {
-						if slices.Contains(fileToEnum[f], fieldTypeName) {
-							srcFile = f
-							break
-						}
-					}
-					if srcFile == "" {
-						return nil, fmt.Errorf("could not find source file for enum type: %s", fieldTypeName)
-					}
-					protoMessageField.IsCustomType = false
-					protoMessageField.IsEnum = true
-					godotType = "int32_t" // Bind as int to avoid Godot binding issues with C++ enums
-					/*
-						if srcFile == protoFile.ProtoPath {
-							godotType = fieldTypeName
-						} else {
-							godotType = fmt.Sprintf("%s::%s", filepath.Base(strings.TrimSuffix(srcFile, ".proto")), fieldTypeName)
-						}
-					*/
-				default:
-					protoMessageField.IsCustomType = false
-					godotType, err = mapProtoToGodotType(fieldType)
-				}
+				godotType, isCustom, isEnum, err := resolveGodotType(field, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames)
 				if err != nil {
-					return nil, fmt.Errorf("could not map proto to godot type: %w", err)
+					return nil, fmt.Errorf("could not resolve godot type: %w", err)
 				}
+
+				protoMessageField.GodotType = godotType
+				protoMessageField.IsCustomType = isCustom
+				protoMessageField.IsEnum = isEnum
+
 				protoMessageField.InnerGodotType = godotType
 				protoMessageField.IsInnerCustomType = protoMessageField.IsCustomType
 

@@ -19,29 +19,29 @@ func main() {
 	}))
 	logger.Info("starting gdbuf")
 
-	protoFilePathPtr := flag.String("proto", "", "path to proto definition files")
-	genOutDirPathPtr := flag.String("genout", ".", "generated proto c++ code output path")
+	protoInputDirPtr := flag.String("proto", "", "path to proto definition files")
+	cppOutputDirPtr := flag.String("genout", ".", "generated proto c++ code output path")
 	extensionNamePtr := flag.String("name", "gdbufgen", "name of the generated gdextension")
-	gdextensionOutDirPathPtr := flag.String("out", "./out", "output directory location of the generated gdextension")
+	extensionArtifactOutputDirPtr := flag.String("out", "./out", "output directory location of the generated gdextension")
 
 	flag.Parse()
 
-	if len(*protoFilePathPtr) == 0 {
+	if len(*protoInputDirPtr) == 0 {
 		logger.Error("required argument --proto not given")
 		os.Exit(1)
 	}
 
-	if err := checkPath(*protoFilePathPtr, true); err != nil {
+	if err := checkPath(*protoInputDirPtr, true); err != nil {
 		logger.Error("invalid path for proto files", "err", err)
 		os.Exit(1)
 	}
 
-	if err := checkPath(*genOutDirPathPtr, true); err != nil {
+	if err := checkPath(*cppOutputDirPtr, true); err != nil {
 		logger.Error("invalid path for code gen output directory", "err", err)
 		os.Exit(1)
 	}
 
-	if err := checkPath(*gdextensionOutDirPathPtr, true); err != nil {
+	if err := checkPath(*extensionArtifactOutputDirPtr, true); err != nil {
 		logger.Error("invalid path for gdextension output directory", "err", err)
 		os.Exit(1)
 	}
@@ -52,19 +52,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	descriptorSet, err := protoc.BuildDescriptorSet(*protoFilePathPtr)
+	descriptorSet, err := protoc.BuildDescriptorSet(*protoInputDirPtr)
 	if err != nil {
 		logger.Error("could not build descriptor set for protobuf definitions", "err", err)
 		os.Exit(1)
 	}
 
-	compiledProtoCppTempDirPath, err := protoc.CompileCpp(*protoFilePathPtr)
+	compiledProtoCppTempDirPath, err := protoc.CompileCpp(*protoInputDirPtr)
 	if err != nil {
 		logger.Error("could not compile proto cpp", "err", err)
 		os.Exit(1)
 	}
 
-	codeGenerator, err := codegen.NewCodeGenerator(logger, *genOutDirPathPtr, *extensionNamePtr, protoc.GetVersion())
+	codeGenerator, err := codegen.NewCodeGenerator(logger, *cppOutputDirPtr, *extensionNamePtr, protoc.GetVersion())
 	if err != nil {
 		logger.Error("could not create new code generator", "err", err)
 		os.Exit(1)
@@ -76,7 +76,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	compiledProtoCppOutDirPath := filepath.Join(*genOutDirPathPtr, "src")
+	compiledProtoCppOutDirPath := filepath.Join(*cppOutputDirPtr, "src")
 	err = os.CopyFS(compiledProtoCppOutDirPath, os.DirFS(compiledProtoCppTempDirPath))
 	if err != nil {
 		logger.Error("problem copying compiled cpp proto to directory", "err", err)
@@ -85,7 +85,7 @@ func main() {
 
 	gdExtensionBuilder := gdextension.NewGDExtensionBuilder(logger)
 
-	err = gdExtensionBuilder.Build(*genOutDirPathPtr, *gdextensionOutDirPathPtr)
+	err = gdExtensionBuilder.Build(*cppOutputDirPtr, *extensionArtifactOutputDirPtr)
 	if err != nil {
 		logger.Error("problem building gdextension", "err", err)
 		os.Exit(1)

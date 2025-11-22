@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 //go:embed all:buildenv/*
@@ -23,7 +24,7 @@ func NewGDExtensionBuilder(logger *slog.Logger) *GDExtensionBuilder {
 	}
 }
 
-func (gde *GDExtensionBuilder) Build(customBuildFilesDir, outputDir string) error {
+func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) error {
 	buildDir, err := os.MkdirTemp("", "gdbuf-build-")
 	if err != nil {
 		return fmt.Errorf("could not make build directory: %w", err)
@@ -40,12 +41,24 @@ func (gde *GDExtensionBuilder) Build(customBuildFilesDir, outputDir string) erro
 		return fmt.Errorf("could not copy build environment to temp directory: %w", err)
 	}
 
-	if err = os.CopyFS(buildDir, os.DirFS(customBuildFilesDir)); err != nil {
+	if err = os.CopyFS(buildDir, os.DirFS(generatedCppSourceDir)); err != nil {
 		return fmt.Errorf("could not copy custom build files to temp directory: %w", err)
 	}
 
 	// all files are in place, try to build
-	buildCmd := exec.Command("make", "build-linux")
+	var buildTarget string
+	switch runtime.GOOS {
+	case "linux":
+		buildTarget = "build-linux"
+	case "darwin":
+		buildTarget = "build-macos"
+	case "windows":
+		buildTarget = "build-windows"
+	default:
+		return fmt.Errorf("unsupported os: %s", runtime.GOOS)
+	}
+
+	buildCmd := exec.Command("make", buildTarget)
 	buildCmd.Env = os.Environ()
 	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("VCPKG_ROOT=%s", filepath.Join(buildDir, "vcpkg")))
 	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("WORKSPACE=%s", buildDir))
