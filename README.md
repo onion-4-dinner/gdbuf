@@ -3,7 +3,7 @@ Use your Protobuf messages in Godot
 
 ---
 
-Note that this software is early and development; don't expect everything to work.
+Note that this software is early in development; don't expect everything to work.
 
 ## Quick Start
 
