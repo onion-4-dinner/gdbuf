@@ -1,20 +1,19 @@
 # Development Guidelines
 
 ## Build & Test
-- **Build:** `make build` creates the binary in `bin/gdbuf`.
-- **Test:** `make test-full` runs the complete integration suite.
-  - *Process:* Compiles `test/proto/*.proto`, runs the generator, and compiles the resulting GDExtension.
-  - *Note:* No Go unit tests exist; verification relies on successful end-to-end generation and C++ compilation.
-  - *Prerequisites:* `go`, `protoc`, `make`, and a C++ compiler.
+- **Build:** `make build` compiles the CLI tool to `bin/gdbuf`.
+- **Unit Test:** `go test ./...` runs Go unit tests (specifically type resolution logic).
+- **Integration Test:** `make test-full` runs the end-to-end suite: compiles protos -> runs gdbuf -> compiles GDExtension.
+  - *Prerequisites:* `go`, `protoc` (v25.1+), `make`, `cmake`, `ninja`, C++ compiler (gcc/clang).
 
 ## Code Style & Conventions
-- **Go:** Follow standard `gofmt` and idiomatic Go conventions.
-- **Imports:** Grouped: Standard library, then 3rd party, then project packages (`github.com/LJ-Software/gdbuf/...`).
-- **Logging:** Use `log/slog` for all application logging.
-- **Error Handling:** Always wrap errors using `fmt.Errorf("...: %w", err)`.
-- **Templates:** C++ code generation uses `text/template` + `sprig` in `internal/codegen/templates/`.
-- **C++:** Generated C++ code follows Godot GDExtension patterns.
-- **Project Structure:**
-  - `internal/codegen`: Logic for generating C++ files.
-  - `internal/gdextension`: Builds the final shared library.
-  - `internal/protoc`: Wrapper around `protoc` operations.
+- **Go:** Idiomatic Go. Use `go fmt`. Group imports: stdlib, 3rd-party, internal.
+- **C++:** Follow Godot GDExtension conventions. Generated code is in `internal/codegen/templates`.
+- **Logging:** Use `log/slog` exclusively.
+- **Error Handling:** Wrap errors with context: `fmt.Errorf("context: %w", err)`.
+- **Protobuf:** Use `google.golang.org/protobuf`. Map WKTs (Timestamp, Struct) to native Godot types (int64, Dictionary) in `godot.go`.
+
+## Project Structure
+- `internal/codegen`: Core logic. `godot.go` handles type mapping. `codegen.go` drives generation.
+- `internal/gdextension`: builds the C++ library. `gdextension.go` selects OS-specific build targets.
+- `internal/protoc`: Wrapper for `protoc` CLI operations. Uses `os.MkdirTemp` for safety.
