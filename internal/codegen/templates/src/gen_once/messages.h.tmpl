@@ -1,6 +1,27 @@
-#include <godot_cpp/variant/string.hpp>
+#pragma once
 
-class Message {
-  public:
-    virtual godot::String foo() = 0;
+#include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/variant.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
+#include <google/protobuf/struct.pb.h>
+#include <google/protobuf/timestamp.pb.h>
+#include <google/protobuf/duration.pb.h>
+
+namespace GDBufUtils {
+    // Struct <-> Dictionary
+    void struct_to_dictionary(const google::protobuf::Struct& p_struct, godot::Dictionary& r_dict);
+    void dictionary_to_struct(const godot::Dictionary& p_dict, google::protobuf::Struct* r_struct);
+
+    // Value <-> Variant
+    void value_to_variant(const google::protobuf::Value& p_val, godot::Variant& r_var);
+    void variant_to_value(const godot::Variant& p_var, google::protobuf::Value* r_val);
+
+    // ListValue <-> Array
+    void list_value_to_array(const google::protobuf::ListValue& p_list, godot::Array& r_array);
+    void array_to_list_value(const godot::Array& p_array, google::protobuf::ListValue* r_list);
+    
+    // Timestamp <-> int64_t (Unix Time)
+    int64_t timestamp_to_millis(const google::protobuf::Timestamp& p_timestamp);
+    void millis_to_timestamp(int64_t p_millis, google::protobuf::Timestamp* r_timestamp);
 }

@@ -9,6 +9,9 @@
 #include "{{ $protoFileNameNoExtension }}.pb.h"
 #include <cstdint> // Required for int64_t
 #include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 namespace {{ snakecase $protoFileNameNoExtension }} {
 {{- range .Messages }}
@@ -35,7 +38,7 @@ class {{ $className }} : public godot::RefCounted {
     godot::String get_proto_file_name();
 
     godot::PackedByteArray to_byte_array();
-    void from_byte_array(godot::PackedByteArray &p_bytes);
+    void from_byte_array(const godot::PackedByteArray &p_bytes);
 
     {{- range .Fields }}
       {{- if .IsCustomType }}

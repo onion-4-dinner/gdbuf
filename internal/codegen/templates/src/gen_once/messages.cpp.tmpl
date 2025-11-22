@@ -1,0 +1,84 @@
+#include "messages.h"
+
+namespace GDBufUtils {
+
+void struct_to_dictionary(const google::protobuf::Struct& p_struct, godot::Dictionary& r_dict) {
+    for (const auto& field : p_struct.fields()) {
+        godot::Variant val;
+        value_to_variant(field.second, val);
+        r_dict[field.first.c_str()] = val;
+    }
+}
+
+void dictionary_to_struct(const godot::Dictionary& p_dict, google::protobuf::Struct* r_struct) {
+    godot::Array keys = p_dict.keys();
+    for (int i = 0; i < keys.size(); i++) {
+        godot::String key = keys[i];
+        godot::Variant val = p_dict[key];
+        google::protobuf::Value* proto_val = &(*r_struct->mutable_fields())[key.utf8().get_data()];
+        variant_to_value(val, proto_val);
+    }
+}
+
+void value_to_variant(const google::protobuf::Value& p_val, godot::Variant& r_var) {
+    switch (p_val.kind_case()) {
+        case google::protobuf::Value::kNullValue: r_var = godot::Variant(); break;
+        case google::protobuf::Value::kNumberValue: r_var = p_val.number_value(); break;
+        case google::protobuf::Value::kStringValue: r_var = godot::String(p_val.string_value().c_str()); break;
+        case google::protobuf::Value::kBoolValue: r_var = p_val.bool_value(); break;
+        case google::protobuf::Value::kStructValue: {
+            godot::Dictionary d;
+            struct_to_dictionary(p_val.struct_value(), d);
+            r_var = d;
+            break;
+        }
+        case google::protobuf::Value::kListValue: {
+            godot::Array a;
+            list_value_to_array(p_val.list_value(), a);
+            r_var = a;
+            break;
+        }
+        default: r_var = godot::Variant(); break;
+    }
+}
+
+void variant_to_value(const godot::Variant& p_var, google::protobuf::Value* r_val) {
+    switch (p_var.get_type()) {
+        case godot::Variant::NIL: r_val->set_null_value(google::protobuf::NULL_VALUE); break;
+        case godot::Variant::BOOL: r_val->set_bool_value(p_var); break;
+        case godot::Variant::INT: r_val->set_number_value((double)(int64_t)p_var); break;
+        case godot::Variant::FLOAT: r_val->set_number_value((double)p_var); break;
+        case godot::Variant::STRING: r_val->set_string_value(((godot::String)p_var).utf8().get_data()); break;
+        case godot::Variant::DICTIONARY: dictionary_to_struct((godot::Dictionary)p_var, r_val->mutable_struct_value()); break;
+        case godot::Variant::ARRAY: array_to_list_value((godot::Array)p_var, r_val->mutable_list_value()); break;
+        default: 
+            // Fallback for unhandled types to string or null
+            r_val->set_null_value(google::protobuf::NULL_VALUE); 
+            break;
+    }
+}
+
+void list_value_to_array(const google::protobuf::ListValue& p_list, godot::Array& r_array) {
+    for (const auto& val : p_list.values()) {
+        godot::Variant v;
+        value_to_variant(val, v);
+        r_array.push_back(v);
+    }
+}
+
+void array_to_list_value(const godot::Array& p_array, google::protobuf::ListValue* r_list) {
+    for (int i = 0; i < p_array.size(); i++) {
+        variant_to_value(p_array[i], r_list->add_values());
+    }
+}
+
+int64_t timestamp_to_millis(const google::protobuf::Timestamp& p_timestamp) {
+    return p_timestamp.seconds() * 1000 + p_timestamp.nanos() / 1000000;
+}
+
+void millis_to_timestamp(int64_t p_millis, google::protobuf::Timestamp* r_timestamp) {
+    r_timestamp->set_seconds(p_millis / 1000);
+    r_timestamp->set_nanos((p_millis % 1000) * 1000000);
+}
+
+} // namespace GDBufUtils
