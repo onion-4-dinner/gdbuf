@@ -15,5 +15,5 @@
 
 ## Project Structure
 - `internal/codegen`: Core logic. `godot.go` handles type mapping. `codegen.go` drives generation.
-- `internal/gdextension`: builds the C++ library. `gdextension.go` selects OS-specific build targets.
+- `internal/gdextension`: Builds the C++ library. `gdextension.go` selects OS-specific build targets.
 - `internal/protoc`: Wrapper for `protoc` CLI operations. Uses `os.MkdirTemp` for safety.
