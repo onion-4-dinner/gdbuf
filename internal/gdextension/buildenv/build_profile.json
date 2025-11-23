@@ -4,6 +4,10 @@
   "enabled_classes": [
     "Node",
     "Variant",
-    "OS"
+    "OS",
+    "Resource",
+    "RefCounted",
+    "Object",
+    "ClassDB"
   ]
 }
