@@ -47,6 +47,7 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descrip
 	tmpDir := os.TempDir()
 	protoDescriptorPath := filepath.Join(tmpDir, "gdbuf.desc.binpb")
 	args := []string{fmt.Sprintf("--descriptor_set_out=%s", protoDescriptorPath)}
+	args = append(args, "--include_source_info")
 	args = append(args, "-I", ".") // Include current dir as the include root
 	// Actually, well-known types might be needed. protoc usually finds them if installed.
 	args = append(args, protoFilePaths...)

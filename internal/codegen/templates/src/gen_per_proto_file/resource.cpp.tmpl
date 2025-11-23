@@ -16,7 +16,7 @@
 namespace gdbuf {
 namespace {{ snakecase $protoFileNameNoExtension }} {
 {{- range .Messages }}
-{{- $className := camelcase .MessageName }}
+{{- $className := .ClassName }}
 
 void {{ $className }}::_bind_methods() {
   godot::ClassDB::bind_method(godot::D_METHOD("get_proto_file_name"), &{{ $className }}::get_proto_file_name);
@@ -26,7 +26,7 @@ void {{ $className }}::_bind_methods() {
   godot::ClassDB::bind_method(godot::D_METHOD("get_{{ snakecase .FieldName }}"), &{{ $className }}::get_{{ snakecase .FieldName }});
   godot::ClassDB::bind_method(godot::D_METHOD("set_{{ snakecase .FieldName }}", "value"), &{{ $className }}::set_{{ snakecase .FieldName }});
   godot::ClassDB::add_property("{{ $className }}", godot::PropertyInfo({{ godotVariantType .GodotType .IsCustomType .IsEnum }}, "{{ snakecase .FieldName }}"
-      {{- if .IsCustomType }}, godot::PROPERTY_HINT_RESOURCE_TYPE, "{{ .GodotType }}"{{- end }}
+      {{- if .IsCustomType }}, godot::PROPERTY_HINT_RESOURCE_TYPE, "{{ .GodotClassName }}"{{- end }}
       ), "set_{{ snakecase .FieldName }}", "get_{{ snakecase .FieldName }}");
   {{- end }}
 }

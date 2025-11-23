@@ -16,7 +16,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level){
   {{- $protoPathNoExtension := trimSuffix ".proto" .ProtoPath }}
   {{- $protoFileNameNoExtension := base $protoPathNoExtension }}
   {{- range .Messages }}
-  {{- $className := camelcase .MessageName }}
+  {{- $className := .ClassName }}
   GDREGISTER_CLASS(gdbuf::{{ snakecase $protoFileNameNoExtension }}::{{ $className }});
   {{- end }}
   {{- end }}

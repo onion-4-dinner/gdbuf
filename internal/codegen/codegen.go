@@ -61,6 +61,7 @@ type ForwardDecl struct {
 }
 
 type protoMessage struct {
+	ClassName   string
 	MessageName string
 	Description string
 	Fields      []protoMessageField
@@ -75,6 +76,7 @@ type protoMessageField struct {
 	FieldName         string
 	ProtoTypeName     string
 	GodotType         string
+	GodotClassName    string
 	InnerGodotType    string
 	IsCustomType      bool
 	IsInnerCustomType bool
@@ -136,6 +138,33 @@ func getTemplateFuncMap() template.FuncMap {
 			return "godot::Variant::NIL"
 		}
 	}
+	f["godotDocType"] = func(godotType string, isCustom bool, isEnum bool) string {
+		if isEnum {
+			return "int"
+		}
+		if isCustom {
+			parts := strings.Split(godotType, "::")
+			return parts[len(parts)-1]
+		}
+		switch godotType {
+		case "bool":
+			return "bool"
+		case "int32_t", "int64_t", "uint32_t", "uint64_t":
+			return "int"
+		case "float", "double":
+			return "float"
+		case "godot::String":
+			return "String"
+		case "godot::PackedByteArray":
+			return "PackedByteArray"
+		case "godot::Dictionary":
+			return "Dictionary"
+		case "godot::Array":
+			return "Array"
+		default:
+			return "Variant"
+		}
+	}
 	return f
 }
 
@@ -190,7 +219,7 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 		}
 
 		for _, msg := range file.Messages {
-			className := toPascalCase(msg.MessageName)
+			className := msg.ClassName
 			outputPath := filepath.Join(cg.destinationDirectoryPath, "doc_classes", className+".xml")
 			if err := cg.executeTemplate("class_doc.xml.tmpl", outputPath, msg); err != nil {
 				return fmt.Errorf("could not execute template class_doc.xml.tmpl for message %s: %w", msg.MessageName, err)
@@ -285,6 +314,7 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 
 				var protoMessage protoMessage
 				protoMessage.MessageName = godotName
+				protoMessage.ClassName = toPascalCase(godotName)
 				currentPath := append(slices.Clone(path), int32(msgIndex))
 				protoMessage.Description = getComments(file.GetSourceCodeInfo(), currentPath)
 
@@ -313,7 +343,7 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 						protoMessageField.Description += "Note: This field is a Google Protobuf Struct. In Godot, it is represented as a Dictionary."
 					}
 
-					godotType, isCustom, isEnum, srcFile, err := resolveGodotType(field, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
+					godotType, godotClassName, isCustom, isEnum, srcFile, err := resolveGodotType(field, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
 					if err != nil {
 						return fmt.Errorf("could not resolve godot type: %w", err)
 					}
@@ -360,11 +390,11 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 								valueField = f
 							}
 						}
-						keyType, _, _, _, err := resolveGodotType(keyField, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
+						keyType, _, _, _, _, err := resolveGodotType(keyField, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
 						if err != nil {
 							return fmt.Errorf("could not resolve map key type: %w", err)
 						}
-						valType, valCustom, _, _, err := resolveGodotType(valueField, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
+						valType, _, valCustom, _, _, err := resolveGodotType(valueField, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
 						if err != nil {
 							return fmt.Errorf("could not resolve map value type: %w", err)
 						}
@@ -372,13 +402,21 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 						protoMessageField.MapValueGodotType = valType
 						protoMessageField.MapValueIsCustom = valCustom
 						protoMessageField.GodotType = "godot::Dictionary"
+						protoMessageField.GodotClassName = "Dictionary"
+						// For maps, we might need to know the value's class name if it's a custom object?
+						// The template for maps uses .MapValueGodotType (C++ type).
+						// If MapValueIsCustom is true, it does cast_to<{{ .MapValueGodotType }}>.
+						// It doesn't seem to use property hints for the dictionary content explicitly in the template I read earlier?
+						// Wait, let's recheck resource.cpp.tmpl.
 						protoMessageField.IsRepeated = false
 					} else {
 						protoMessageField.GodotType = godotType
+						protoMessageField.GodotClassName = godotClassName
 						if field.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
 							cg.logger.Debug("Repeated field", "name", field.GetName(), "before", protoMessageField.IsCustomType)
 							protoMessageField.IsRepeated = true
 							protoMessageField.GodotType = "godot::Array"
+							protoMessageField.GodotClassName = "Array"
 							protoMessageField.IsCustomType = false
 							cg.logger.Debug("Repeated field", "name", field.GetName(), "after", protoMessageField.IsCustomType)
 						}

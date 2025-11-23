@@ -27,7 +27,7 @@ var protoGodotTypeMap = map[descriptorpb.FieldDescriptorProto_Type]string{
 	descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: "int64_t",
 }
 
-func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath string, fileToMsgs map[string][]string, fileToEnum map[string][]string, allMessageDescriptors map[string]*descriptorpb.DescriptorProto, typeToGodotName map[string]string) (godotType string, isCustom bool, isEnum bool, srcFile string, err error) {
+func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath string, fileToMsgs map[string][]string, fileToEnum map[string][]string, allMessageDescriptors map[string]*descriptorpb.DescriptorProto, typeToGodotName map[string]string) (godotType string, godotClassName string, isCustom bool, isEnum bool, srcFile string, err error) {
 	fieldType := *field.GetType().Enum()
 	fullTypeName := field.GetTypeName()
 
@@ -41,7 +41,7 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 			// Check if it's a MapEntry
 			if desc, ok := allMessageDescriptors[fullTypeName]; ok {
 				if desc.GetOptions().GetMapEntry() {
-					return "godot::Dictionary", false, false, "", nil
+					return "godot::Dictionary", "Dictionary", false, false, "", nil
 				}
 			}
 
@@ -54,7 +54,7 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 		}
 
 		if srcFile == "" {
-			return "", false, false, "", fmt.Errorf("could not find source file for message type: %s", fullTypeName)
+			return "", "", false, false, "", fmt.Errorf("could not find source file for message type: %s", fullTypeName)
 		}
 
 		if srcFile == "google::protobuf" {
@@ -67,27 +67,37 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 			switch shortName {
 			case "Timestamp":
 				godotType = "int64_t"
+				godotClassName = "int"
 			case "Duration":
 				godotType = "double"
+				godotClassName = "float"
 			case "Struct", "Any":
 				godotType = "godot::Dictionary"
+				godotClassName = "Dictionary"
 			case "ListValue":
 				godotType = "godot::Array"
+				godotClassName = "Array"
 			case "Value", "Empty":
 				godotType = "godot::Variant"
+				godotClassName = "Variant"
 			case "StringValue":
 				godotType = "godot::String"
+				godotClassName = "String"
 			case "Int32Value":
 				godotType = "int32_t"
+				godotClassName = "int"
 			case "BoolValue":
 				godotType = "bool"
+				godotClassName = "bool"
 			default:
 				isCustom = true
 				godotType = fmt.Sprintf("google::protobuf::%s", shortName)
+				godotClassName = shortName // Assuming WKTs wrappers are registered with simple names or not handled as resources
 			}
 		} else {
 			isCustom = true
-			godotClassName, ok := typeToGodotName[fullTypeName]
+			var ok bool
+			godotClassName, ok = typeToGodotName[fullTypeName]
 			if !ok {
 				// Fallback or error? Should be there.
 				// Try simple name
@@ -113,19 +123,21 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 			}
 		}
 		if srcFile == "" {
-			return "", false, false, "", fmt.Errorf("could not find source file for enum type: %s", fullTypeName)
+			return "", "", false, false, "", fmt.Errorf("could not find source file for enum type: %s", fullTypeName)
 		}
 		isCustom = false
 		isEnum = true
 		godotType = "int32_t" // Bind as int to avoid Godot binding issues with C++ enums
+		godotClassName = "int"
 	default:
 		isCustom = false
 		var ok bool
 		godotType, ok = protoGodotTypeMap[fieldType]
 		if !ok {
-			return "", false, false, "", fmt.Errorf("unknown or unsupported proto type: %s", fieldType.String())
+			return "", "", false, false, "", fmt.Errorf("unknown or unsupported proto type: %s", fieldType.String())
 		}
+		godotClassName = godotType // Simplification, cleaned up later if needed, but usually not used for primitives in hints
 	}
 
-	return godotType, isCustom, isEnum, srcFile, nil
+	return godotType, godotClassName, isCustom, isEnum, srcFile, nil
 }
