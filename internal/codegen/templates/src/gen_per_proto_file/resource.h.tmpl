@@ -22,6 +22,10 @@ namespace {{ .Namespace }} {
 namespace gdbuf {
 namespace {{ snakecase $protoFileNameNoExtension }} {
 {{- range .Messages }}
+class {{ camelcase .MessageName }};
+{{- end }}
+
+{{- range .Messages }}
 {{- $className := camelcase .MessageName }}
 
 class {{ $className }} : public godot::Resource {

@@ -29,7 +29,7 @@ The program operates in a linear pipeline:
 -   **`templates/`**: Contains the `.tmpl` files.
     -   `gdextension/`: CMake and config files.
     -   `src/gen_once/`: Files generated once per run (e.g., `register_types.cpp`).
-    -   `src/gen_per_proto_file/`: Files generated for every proto file (e.g., `refcounted.h` which defines the wrapper classes).
+    -   `src/gen_per_proto_file/`: Files generated for every proto file (e.g., `resource.h` which defines the wrapper classes).
     -   `doc/`: Templates for generating Godot XML documentation.
 
 ### `internal/gdextension`
@@ -45,7 +45,7 @@ We map standard Proto types to Godot Variants:
 -   `map<K,V>` -> `godot::Dictionary` (with custom serialization logic in templates)
 -   `oneof` -> Properties for each option, handled via explicit getters/setters.
 
-### Resource Wrapper (`refcounted.h.tmpl`)
+### Resource Wrapper (`resource.h.tmpl`)
 Every Protobuf message is wrapped in a class inheriting from `godot::Resource`.
 -   **Properties**: Fields are registered with `ADD_PROPERTY`, making them visible in the Godot Inspector.
 -   **Serialization**: We generate `to_byte_array()` and `from_byte_array()` methods that internally use the standard Protobuf `SerializeAsString()` and `ParseFromArray()`.
