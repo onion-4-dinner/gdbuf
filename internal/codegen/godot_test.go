@@ -101,7 +101,7 @@ func TestResolveGodotType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotType, gotIsCustom, gotIsEnum, err := resolveGodotType(tt.field, tt.currentProtoPath, tt.fileToMsgs, tt.fileToEnum)
+			gotType, gotIsCustom, gotIsEnum, _, err := resolveGodotType(tt.field, tt.currentProtoPath, tt.fileToMsgs, tt.fileToEnum)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resolveGodotType() error = %v, wantErr %v", err, tt.wantErr)
 				return

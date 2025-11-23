@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="{{ camelcase .MessageName }}" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+{{ .Description }}
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+        {{- range .Fields }}
+		<member name="{{ snakecase .FieldName }}" type="{{ godotVariantType .GodotType .IsCustomType .IsEnum }}" setter="set_{{ snakecase .FieldName }}" getter="get_{{ snakecase .FieldName }}" default="">
+{{ .Description }}
+		</member>
+        {{- end }}
+	</members>
+</class>

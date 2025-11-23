@@ -46,7 +46,11 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descrip
 
 	tmpDir := os.TempDir()
 	protoDescriptorPath := filepath.Join(tmpDir, "gdbuf.desc.binpb")
-	buildProtoDescriptorCmd := exec.Command("protoc", append([]string{fmt.Sprintf("--descriptor_set_out=%s", protoDescriptorPath)}, protoFilePaths...)...)
+	args := []string{fmt.Sprintf("--descriptor_set_out=%s", protoDescriptorPath)}
+	args = append(args, "-I", ".") // Include current dir as the include root
+	// Actually, well-known types might be needed. protoc usually finds them if installed.
+	args = append(args, protoFilePaths...)
+	buildProtoDescriptorCmd := exec.Command("protoc", args...)
 
 	var stderr bytes.Buffer
 	buildProtoDescriptorCmd.Stderr = &stderr
@@ -80,7 +84,10 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not get proto files from %s: %w", protoFilesDirPath, err)
 	}
-	compileCppCmd := exec.Command("protoc", append([]string{fmt.Sprintf("--cpp_out=%s", tempProtocBuildDir)}, protoFilePaths...)...)
+	args := []string{fmt.Sprintf("--cpp_out=%s", tempProtocBuildDir)}
+	args = append(args, "-I", ".")
+	args = append(args, protoFilePaths...)
+	compileCppCmd := exec.Command("protoc", args...)
 
 	var stderr bytes.Buffer
 	compileCppCmd.Stderr = &stderr

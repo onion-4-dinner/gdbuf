@@ -17,7 +17,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level){
   {{- $protoFileNameNoExtension := base $protoPathNoExtension }}
   {{- range .Messages }}
   {{- $className := camelcase .MessageName }}
-  GDREGISTER_CLASS({{ snakecase $protoFileNameNoExtension }}::{{ $className }});
+  GDREGISTER_CLASS(gdbuf::{{ snakecase $protoFileNameNoExtension }}::{{ $className }});
   {{- end }}
   {{- end }}
 }

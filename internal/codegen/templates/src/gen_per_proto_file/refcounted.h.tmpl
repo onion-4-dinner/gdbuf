@@ -4,7 +4,7 @@
 #pragma once
 
 #include <string>
-#include "godot_cpp/classes/ref_counted.hpp"
+#include "godot_cpp/classes/resource.hpp"
 #include "godot_cpp/classes/wrapped.hpp"
 #include "{{ $protoFileNameNoExtension }}.pb.h"
 #include <cstdint> // Required for int64_t
@@ -13,12 +13,19 @@
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
+{{- range .ForwardDecls }}
+namespace {{ .Namespace }} {
+    class {{ .ClassName }};
+}
+{{- end }}
+
+namespace gdbuf {
 namespace {{ snakecase $protoFileNameNoExtension }} {
 {{- range .Messages }}
 {{- $className := camelcase .MessageName }}
 
-class {{ $className }} : public godot::RefCounted {
-  GDCLASS({{ $className }}, godot::RefCounted)
+class {{ $className }} : public godot::Resource {
+  GDCLASS({{ $className }}, godot::Resource)
 
   protected:
     static void _bind_methods();
@@ -51,4 +58,5 @@ class {{ $className }} : public godot::RefCounted {
     {{- end }}
 };
 {{- end }}
+}
 }

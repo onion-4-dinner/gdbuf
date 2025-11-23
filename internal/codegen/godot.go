@@ -27,7 +27,7 @@ var protoGodotTypeMap = map[descriptorpb.FieldDescriptorProto_Type]string{
 	descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: "int64_t",
 }
 
-func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath string, fileToMsgs map[string][]string, fileToEnum map[string][]string) (godotType string, isCustom bool, isEnum bool, err error) {
+func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath string, fileToMsgs map[string][]string, fileToEnum map[string][]string) (godotType string, isCustom bool, isEnum bool, srcFile string, err error) {
 	fieldType := *field.GetType().Enum()
 	// Get the plain type name (e.g. "Timestamp" from ".google.protobuf.Timestamp")
 	fieldTypeName := field.GetTypeName()
@@ -35,9 +35,10 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 		fieldTypeName = fieldTypeName[lastDot+1:]
 	}
 
+	srcFile = ""
+
 	switch fieldType {
 	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
-		var srcFile string = ""
 		switch fieldTypeName {
 		case "Any", "Timestamp", "Duration", "StringValue", "Int32Value", "Struct", "ListValue", "Value", "Empty", "BoolValue":
 			srcFile = "google::protobuf"
@@ -50,7 +51,7 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 			}
 		}
 		if srcFile == "" {
-			return "", false, false, fmt.Errorf("could not find source file for message type: %s", fieldTypeName)
+			return "", false, false, "", fmt.Errorf("could not find source file for message type: %s", fieldTypeName)
 		}
 
 		if srcFile == "google::protobuf" {
@@ -81,11 +82,10 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 			if srcFile == currentProtoPath {
 				godotType = fieldTypeName
 			} else {
-				godotType = fmt.Sprintf("%s::%s", filepath.Base(strings.TrimSuffix(srcFile, ".proto")), fieldTypeName)
+				godotType = fmt.Sprintf("gdbuf::%s::%s", filepath.Base(strings.TrimSuffix(srcFile, ".proto")), fieldTypeName)
 			}
 		}
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
-		var srcFile string = ""
 		for f := range fileToEnum {
 			if slices.Contains(fileToEnum[f], fieldTypeName) {
 				srcFile = f
@@ -93,7 +93,7 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 			}
 		}
 		if srcFile == "" {
-			return "", false, false, fmt.Errorf("could not find source file for enum type: %s", fieldTypeName)
+			return "", false, false, "", fmt.Errorf("could not find source file for enum type: %s", fieldTypeName)
 		}
 		isCustom = false
 		isEnum = true
@@ -103,9 +103,9 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 		var ok bool
 		godotType, ok = protoGodotTypeMap[fieldType]
 		if !ok {
-			return "", false, false, fmt.Errorf("unknown or unsupported proto type: %s", fieldType.String())
+			return "", false, false, "", fmt.Errorf("unknown or unsupported proto type: %s", fieldType.String())
 		}
 	}
 
-	return godotType, isCustom, isEnum, nil
+	return godotType, isCustom, isEnum, srcFile, nil
 }

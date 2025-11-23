@@ -7,6 +7,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
+import "test/proto/dependency.proto";
 
 enum BasicTestEnum {
   BASIC_TEST_ENUM_UNSPECIFIED = 0;
@@ -71,4 +72,5 @@ message EverythingMessage {
   // OuterNestedMessage nested_message = 5;
   GoogleWellKnownTypesMessage well_known_types_message = 6;
   BasicTestEnum basic_enum = 7;
+  dependency.DependencyMessage dependency_message = 8;
 }

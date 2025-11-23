@@ -83,5 +83,17 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) er
 		return fmt.Errorf("could not copy build output to output directory: %w", err)
 	}
 
+	// Copy doc_classes
+	docsSrc := filepath.Join(buildDir, "doc_classes")
+	if _, err := os.Stat(docsSrc); err == nil {
+		docsDest := filepath.Join(outputDir, "doc_classes")
+		if err := os.MkdirAll(docsDest, 0755); err != nil {
+			return fmt.Errorf("could not create docs directory: %w", err)
+		}
+		if err := os.CopyFS(docsDest, os.DirFS(docsSrc)); err != nil {
+			return fmt.Errorf("could not copy doc files: %w", err)
+		}
+	}
+
 	return nil
 }
