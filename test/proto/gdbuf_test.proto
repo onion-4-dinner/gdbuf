@@ -59,6 +59,30 @@ message GoogleWellKnownTypesMessage {
   google.protobuf.Empty empty_field = 7;
 }
 
+message MapMessage {
+  map<string, int32> string_int_map = 1;
+  map<int32, BasicTestMessage> int_msg_map = 2;
+}
+
+message OuterNestedMessage {
+  message InnerNestedMessage {
+    string inner_string = 1;
+  }
+  string outer_string = 1;
+  InnerNestedMessage inner_msg = 2;
+}
+
+message RepeatedComplexMessage {
+   repeated BasicTestMessage messages = 1;
+   repeated BasicTestEnum enums = 2;
+}
+
+message RecursiveMessage {
+   string name = 1;
+   repeated RecursiveMessage children = 2;
+   RecursiveMessage parent = 3;
+}
+
 message ReservedMessage {
   reserved 2, 5, 7 to 11;
   reserved "foo", "bar";
@@ -67,10 +91,12 @@ message ReservedMessage {
 message EverythingMessage {
   BasicTestMessage basic_message = 1;
   SpecialFieldTypesMessage special_message = 2;
-  // MapMessage map_message = 3;
+  MapMessage map_message = 3;
   OneOfMessage oneof_message = 4;
-  // OuterNestedMessage nested_message = 5;
+  OuterNestedMessage nested_message = 5;
   GoogleWellKnownTypesMessage well_known_types_message = 6;
   BasicTestEnum basic_enum = 7;
   dependency.DependencyMessage dependency_message = 8;
+  RepeatedComplexMessage repeated_complex = 9;
+  RecursiveMessage recursive = 10;
 }

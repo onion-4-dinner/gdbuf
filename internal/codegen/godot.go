@@ -27,36 +27,44 @@ var protoGodotTypeMap = map[descriptorpb.FieldDescriptorProto_Type]string{
 	descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: "int64_t",
 }
 
-func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath string, fileToMsgs map[string][]string, fileToEnum map[string][]string) (godotType string, isCustom bool, isEnum bool, srcFile string, err error) {
+func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath string, fileToMsgs map[string][]string, fileToEnum map[string][]string, allMessageDescriptors map[string]*descriptorpb.DescriptorProto, typeToGodotName map[string]string) (godotType string, isCustom bool, isEnum bool, srcFile string, err error) {
 	fieldType := *field.GetType().Enum()
-	// Get the plain type name (e.g. "Timestamp" from ".google.protobuf.Timestamp")
-	fieldTypeName := field.GetTypeName()
-	if lastDot := strings.LastIndex(fieldTypeName, "."); lastDot != -1 {
-		fieldTypeName = fieldTypeName[lastDot+1:]
-	}
+	fullTypeName := field.GetTypeName()
 
 	srcFile = ""
 
 	switch fieldType {
 	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
-		switch fieldTypeName {
-		case "Any", "Timestamp", "Duration", "StringValue", "Int32Value", "Struct", "ListValue", "Value", "Empty", "BoolValue":
+		if strings.HasPrefix(fullTypeName, ".google.protobuf.") {
 			srcFile = "google::protobuf"
-		default:
+		} else {
+			// Check if it's a MapEntry
+			if desc, ok := allMessageDescriptors[fullTypeName]; ok {
+				if desc.GetOptions().GetMapEntry() {
+					return "godot::Dictionary", false, false, "", nil
+				}
+			}
+
 			for f := range fileToMsgs {
-				if slices.Contains(fileToMsgs[f], fieldTypeName) {
+				if slices.Contains(fileToMsgs[f], fullTypeName) {
 					srcFile = f
 					break
 				}
 			}
 		}
+
 		if srcFile == "" {
-			return "", false, false, "", fmt.Errorf("could not find source file for message type: %s", fieldTypeName)
+			return "", false, false, "", fmt.Errorf("could not find source file for message type: %s", fullTypeName)
 		}
 
 		if srcFile == "google::protobuf" {
 			isCustom = false
-			switch fieldTypeName {
+			// Handle WKTs by short name for switch convenience, or full name
+			shortName := fullTypeName
+			if lastDot := strings.LastIndex(fullTypeName, "."); lastDot != -1 {
+				shortName = fullTypeName[lastDot+1:]
+			}
+			switch shortName {
 			case "Timestamp":
 				godotType = "int64_t"
 			case "Duration":
@@ -75,25 +83,37 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 				godotType = "bool"
 			default:
 				isCustom = true
-				godotType = fmt.Sprintf("google::protobuf::%s", fieldTypeName)
+				godotType = fmt.Sprintf("google::protobuf::%s", shortName)
 			}
 		} else {
 			isCustom = true
+			godotClassName, ok := typeToGodotName[fullTypeName]
+			if !ok {
+				// Fallback or error? Should be there.
+				// Try simple name
+				if lastDot := strings.LastIndex(fullTypeName, "."); lastDot != -1 {
+					godotClassName = fullTypeName[lastDot+1:]
+				} else {
+					godotClassName = fullTypeName
+				}
+			}
+			godotClassName = toPascalCase(godotClassName)
+
 			if srcFile == currentProtoPath {
-				godotType = fieldTypeName
+				godotType = godotClassName
 			} else {
-				godotType = fmt.Sprintf("gdbuf::%s::%s", filepath.Base(strings.TrimSuffix(srcFile, ".proto")), fieldTypeName)
+				godotType = fmt.Sprintf("gdbuf::%s::%s", filepath.Base(strings.TrimSuffix(srcFile, ".proto")), godotClassName)
 			}
 		}
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		for f := range fileToEnum {
-			if slices.Contains(fileToEnum[f], fieldTypeName) {
+			if slices.Contains(fileToEnum[f], fullTypeName) {
 				srcFile = f
 				break
 			}
 		}
 		if srcFile == "" {
-			return "", false, false, "", fmt.Errorf("could not find source file for enum type: %s", fieldTypeName)
+			return "", false, false, "", fmt.Errorf("could not find source file for enum type: %s", fullTypeName)
 		}
 		isCustom = false
 		isEnum = true

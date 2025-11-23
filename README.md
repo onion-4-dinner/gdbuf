@@ -65,5 +65,10 @@ Once the extension is generated and placed in your project:
    ```
 3. **Use in Editor:** Right-click in FileSystem -> New Resource -> Search for your message name.
 
-## Features & Support
-For a detailed list of supported types and mappings, see [FEATURES.md](FEATURES.md).
+## Documentation
+
+- **[Features & Supported Types](docs/FEATURES.md)**: Detailed list of supported Protobuf features and how they map to Godot.
+- **[Developer Guide](docs/DEV.md)**: Architecture overview and guide for contributors.
+- **[Agent Guidelines](docs/AGENTS.md)**: Instructions for AI agents working on this codebase.
+- **[Testing](test/README.md)**: How to run the test suite.
+

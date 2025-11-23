@@ -11,13 +11,22 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/huandu/xstrings"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 //go:embed templates/*
 var templatesFS embed.FS
+
+func toPascalCase(s string) string {
+	parts := strings.Split(s, "_")
+	for i, p := range parts {
+		if len(p) > 0 {
+			parts[i] = strings.ToUpper(p[:1]) + p[1:]
+		}
+	}
+	return strings.Join(parts, "")
+}
 
 type CodeGenerator struct {
 	logger                   *slog.Logger
@@ -71,6 +80,10 @@ type protoMessageField struct {
 	IsInnerCustomType bool
 	IsRepeated        bool
 	IsEnum            bool
+	IsMap             bool
+	MapKeyGodotType   string
+	MapValueGodotType string
+	MapValueIsCustom  bool
 	Description       string
 }
 
@@ -177,7 +190,7 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 		}
 
 		for _, msg := range file.Messages {
-			className := xstrings.ToCamelCase(msg.MessageName)
+			className := toPascalCase(msg.MessageName)
 			outputPath := filepath.Join(cg.destinationDirectoryPath, "doc_classes", className+".xml")
 			if err := cg.executeTemplate("class_doc.xml.tmpl", outputPath, msg); err != nil {
 				return fmt.Errorf("could not execute template class_doc.xml.tmpl for message %s: %w", msg.MessageName, err)
@@ -190,17 +203,49 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 
 func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.FileDescriptorProto) (*protoData, error) {
 	var protoData protoData
-	// one loop through to get a mapping of filename and message name
+	// one loop through to get a mapping of filename and message name (recursive)
 	var protoFileToDeclaredMessageNames map[string][]string = make(map[string][]string)
 	var protoFileToDeclaredEnumNames map[string][]string = make(map[string][]string)
+	var allMessageDescriptors map[string]*descriptorpb.DescriptorProto = make(map[string]*descriptorpb.DescriptorProto)
+	var typeToGodotName map[string]string = make(map[string]string)
+
 	for _, file := range fileDescriptorSet {
-		for _, msg := range file.GetMessageType() {
-			cg.logger.Debug("found message", "file", file.GetName(), "message", msg.GetName())
-			protoFileToDeclaredMessageNames[file.GetName()] = append(protoFileToDeclaredMessageNames[file.GetName()], msg.GetName())
+		pkg := file.GetPackage()
+		prefix := "."
+		if pkg != "" {
+			prefix = "." + pkg + "."
 		}
+
+		// Recursive message traversal
+		var traverseMsgs func(msgs []*descriptorpb.DescriptorProto, currentPrefix string)
+		traverseMsgs = func(msgs []*descriptorpb.DescriptorProto, currentPrefix string) {
+			for _, msg := range msgs {
+				fullName := currentPrefix + msg.GetName()
+				protoFileToDeclaredMessageNames[file.GetName()] = append(protoFileToDeclaredMessageNames[file.GetName()], fullName)
+				allMessageDescriptors[fullName] = msg
+
+				// Construct Godot Name
+				// Remove package prefix
+				shortName := strings.TrimPrefix(fullName, prefix)
+				// Replace . with _
+				godotName := strings.ReplaceAll(shortName, ".", "_")
+				typeToGodotName[fullName] = godotName
+
+				traverseMsgs(msg.GetNestedType(), fullName+".")
+
+				// Also traverse Nested Enums
+				for _, enum := range msg.GetEnumType() {
+					enumFullName := fullName + "." + enum.GetName()
+					protoFileToDeclaredEnumNames[file.GetName()] = append(protoFileToDeclaredEnumNames[file.GetName()], enumFullName)
+				}
+			}
+		}
+		traverseMsgs(file.GetMessageType(), prefix)
+
+		// Top level enums
 		for _, enum := range file.GetEnumType() {
-			cg.logger.Debug("found enum", "file", file.GetName(), "enum", enum.GetName())
-			protoFileToDeclaredEnumNames[file.GetName()] = append(protoFileToDeclaredEnumNames[file.GetName()], enum.GetName())
+			fullName := prefix + enum.GetName()
+			protoFileToDeclaredEnumNames[file.GetName()] = append(protoFileToDeclaredEnumNames[file.GetName()], fullName)
 		}
 	}
 
@@ -209,6 +254,12 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 		var protoFile protoFile
 		protoFile.ProtoPath = file.GetName()
 		protoFile.PackageName = file.GetPackage()
+
+		pkg := file.GetPackage()
+		prefix := "."
+		if pkg != "" {
+			prefix = "." + pkg + "."
+		}
 
 		for _, enum := range file.GetEnumType() {
 			var protoEnum protoEnum
@@ -220,84 +271,139 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 			protoFile.Enums = append(protoFile.Enums, protoEnum)
 		}
 
-		for msgIndex, msg := range file.GetMessageType() {
-			var protoMessage protoMessage
-			protoMessage.MessageName = msg.GetName()
-			protoMessage.Description = getComments(file.GetSourceCodeInfo(), []int32{4, int32(msgIndex)})
-
-			for fieldIndex, field := range msg.GetField() {
-				var protoMessageField protoMessageField
-				protoMessageField.FieldName = field.GetName()
-				protoMessageField.ProtoTypeName = field.GetTypeName()
-				protoMessageField.Description = getComments(file.GetSourceCodeInfo(), []int32{4, int32(msgIndex), 2, int32(fieldIndex)})
-
-				// Add default descriptions for WKTs
-				if protoMessageField.ProtoTypeName == ".google.protobuf.Timestamp" {
-					if protoMessageField.Description != "" {
-						protoMessageField.Description += "\n"
-					}
-					protoMessageField.Description += "Note: This field is a Google Protobuf Timestamp. In Godot, it is represented as an int64 (Unix timestamp in milliseconds)."
-				} else if protoMessageField.ProtoTypeName == ".google.protobuf.Duration" {
-					if protoMessageField.Description != "" {
-						protoMessageField.Description += "\n"
-					}
-					protoMessageField.Description += "Note: This field is a Google Protobuf Duration. In Godot, it is represented as a double (seconds)."
-				} else if protoMessageField.ProtoTypeName == ".google.protobuf.Struct" {
-					if protoMessageField.Description != "" {
-						protoMessageField.Description += "\n"
-					}
-					protoMessageField.Description += "Note: This field is a Google Protobuf Struct. In Godot, it is represented as a Dictionary."
+		// Recursive generation
+		var messagesToGenerate []protoMessage
+		var traverseGen func(msgs []*descriptorpb.DescriptorProto, currentPrefix string, path []int32) error
+		traverseGen = func(msgs []*descriptorpb.DescriptorProto, currentPrefix string, path []int32) error {
+			for msgIndex, msg := range msgs {
+				if msg.GetOptions().GetMapEntry() {
+					continue
 				}
 
-				godotType, isCustom, isEnum, srcFile, err := resolveGodotType(field, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames)
-				if err != nil {
-					return nil, fmt.Errorf("could not resolve godot type: %w", err)
-				}
+				fullName := currentPrefix + msg.GetName()
+				godotName := typeToGodotName[fullName]
 
-				if isCustom && srcFile != "" && srcFile != "google::protobuf" && srcFile != protoFile.ProtoPath {
-					headerPath := strings.TrimSuffix(srcFile, ".proto") + ".h"
-					if !slices.Contains(protoFile.Dependencies, headerPath) {
-						protoFile.Dependencies = append(protoFile.Dependencies, headerPath)
+				var protoMessage protoMessage
+				protoMessage.MessageName = godotName
+				currentPath := append(slices.Clone(path), int32(msgIndex))
+				protoMessage.Description = getComments(file.GetSourceCodeInfo(), currentPath)
+
+				for fieldIndex, field := range msg.GetField() {
+					var protoMessageField protoMessageField
+					protoMessageField.FieldName = field.GetName()
+					protoMessageField.ProtoTypeName = field.GetTypeName()
+					fieldPath := append(slices.Clone(currentPath), 2, int32(fieldIndex))
+					protoMessageField.Description = getComments(file.GetSourceCodeInfo(), fieldPath)
+
+					// Add default descriptions for WKTs
+					if protoMessageField.ProtoTypeName == ".google.protobuf.Timestamp" {
+						if protoMessageField.Description != "" {
+							protoMessageField.Description += "\n"
+						}
+						protoMessageField.Description += "Note: This field is a Google Protobuf Timestamp. In Godot, it is represented as an int64 (Unix timestamp in milliseconds)."
+					} else if protoMessageField.ProtoTypeName == ".google.protobuf.Duration" {
+						if protoMessageField.Description != "" {
+							protoMessageField.Description += "\n"
+						}
+						protoMessageField.Description += "Note: This field is a Google Protobuf Duration. In Godot, it is represented as a double (seconds)."
+					} else if protoMessageField.ProtoTypeName == ".google.protobuf.Struct" {
+						if protoMessageField.Description != "" {
+							protoMessageField.Description += "\n"
+						}
+						protoMessageField.Description += "Note: This field is a Google Protobuf Struct. In Godot, it is represented as a Dictionary."
 					}
 
-					// Add forward declaration
-					parts := strings.Split(godotType, "::")
-					if len(parts) > 1 {
-						className := parts[len(parts)-1]
-						namespace := strings.Join(parts[:len(parts)-1], "::")
-						fd := ForwardDecl{Namespace: namespace, ClassName: className}
-						exists := false
-						for _, existing := range protoFile.ForwardDecls {
-							if existing == fd {
-								exists = true
-								break
+					godotType, isCustom, isEnum, srcFile, err := resolveGodotType(field, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
+					if err != nil {
+						return fmt.Errorf("could not resolve godot type: %w", err)
+					}
+
+					if isCustom && srcFile != "" && srcFile != "google::protobuf" && srcFile != protoFile.ProtoPath {
+						headerPath := strings.TrimSuffix(srcFile, ".proto") + ".h"
+						if !slices.Contains(protoFile.Dependencies, headerPath) {
+							protoFile.Dependencies = append(protoFile.Dependencies, headerPath)
+						}
+
+						// Add forward declaration
+						parts := strings.Split(godotType, "::")
+						if len(parts) > 1 {
+							className := parts[len(parts)-1]
+							namespace := strings.Join(parts[:len(parts)-1], "::")
+							fd := ForwardDecl{Namespace: namespace, ClassName: className}
+							exists := false
+							for _, existing := range protoFile.ForwardDecls {
+								if existing == fd {
+									exists = true
+									break
+								}
+							}
+							if !exists {
+								protoFile.ForwardDecls = append(protoFile.ForwardDecls, fd)
 							}
 						}
-						if !exists {
-							protoFile.ForwardDecls = append(protoFile.ForwardDecls, fd)
+					}
+
+					protoMessageField.IsCustomType = isCustom
+					protoMessageField.IsEnum = isEnum
+
+					protoMessageField.InnerGodotType = godotType
+					protoMessageField.IsInnerCustomType = protoMessageField.IsCustomType
+
+					if desc, ok := allMessageDescriptors[field.GetTypeName()]; ok && desc.GetOptions().GetMapEntry() {
+						protoMessageField.IsMap = true
+						var keyField, valueField *descriptorpb.FieldDescriptorProto
+						for _, f := range desc.GetField() {
+							if f.GetNumber() == 1 {
+								keyField = f
+							}
+							if f.GetNumber() == 2 {
+								valueField = f
+							}
+						}
+						keyType, _, _, _, err := resolveGodotType(keyField, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
+						if err != nil {
+							return fmt.Errorf("could not resolve map key type: %w", err)
+						}
+						valType, valCustom, _, _, err := resolveGodotType(valueField, protoFile.ProtoPath, protoFileToDeclaredMessageNames, protoFileToDeclaredEnumNames, allMessageDescriptors, typeToGodotName)
+						if err != nil {
+							return fmt.Errorf("could not resolve map value type: %w", err)
+						}
+						protoMessageField.MapKeyGodotType = keyType
+						protoMessageField.MapValueGodotType = valType
+						protoMessageField.MapValueIsCustom = valCustom
+						protoMessageField.GodotType = "godot::Dictionary"
+						protoMessageField.IsRepeated = false
+					} else {
+						protoMessageField.GodotType = godotType
+						if field.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+							cg.logger.Debug("Repeated field", "name", field.GetName(), "before", protoMessageField.IsCustomType)
+							protoMessageField.IsRepeated = true
+							protoMessageField.GodotType = "godot::Array"
+							protoMessageField.IsCustomType = false
+							cg.logger.Debug("Repeated field", "name", field.GetName(), "after", protoMessageField.IsCustomType)
 						}
 					}
+
+					protoMessage.Fields = append(protoMessage.Fields, protoMessageField)
 				}
+				cg.logger.Debug("Generated message", "name", protoMessage.MessageName, "fields", len(protoMessage.Fields))
+				messagesToGenerate = append(messagesToGenerate, protoMessage)
 
-				protoMessageField.GodotType = godotType
-				protoMessageField.IsCustomType = isCustom
-				protoMessageField.IsEnum = isEnum
-
-				protoMessageField.InnerGodotType = godotType
-				protoMessageField.IsInnerCustomType = protoMessageField.IsCustomType
-
-				if field.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
-					protoMessageField.IsRepeated = true
-					protoMessageField.GodotType = "godot::Array"
-					protoMessageField.IsCustomType = false
-				} else {
-					protoMessageField.GodotType = godotType
+				// Recurse for nested types. NestedType is field 3.
+				nestedPath := append(slices.Clone(currentPath), 3)
+				if err := traverseGen(msg.GetNestedType(), fullName+".", nestedPath); err != nil {
+					return err
 				}
-
-				protoMessage.Fields = append(protoMessage.Fields, protoMessageField)
 			}
-			protoFile.Messages = append(protoFile.Messages, protoMessage)
+			return nil
 		}
+
+		// MessageType is field 4 in FileDescriptorProto
+		if err := traverseGen(file.GetMessageType(), prefix, []int32{4}); err != nil {
+			return nil, err
+		}
+		protoFile.Messages = messagesToGenerate
+
 		protoData.Files = append(protoData.Files, protoFile)
 	}
 	return &protoData, nil

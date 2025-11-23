@@ -54,8 +54,40 @@ godot::PackedByteArray {{ $className }}::to_byte_array() {
         }
         {{- else if eq .InnerGodotType "godot::String" }}
         proto_msg.add_{{ .FieldName }}(((godot::String){{ snakecase .FieldName }}_arr[i]).utf8().get_data());
+        {{- else if .IsEnum }}
+        {{- $enumType := replace "." "::" (trimPrefix "." .ProtoTypeName) }}
+        proto_msg.add_{{ .FieldName }}(static_cast<{{ if $enumType }}::{{ $enumType }}{{ else }}int{{ end }}>((int64_t){{ snakecase .FieldName }}_arr[i]));
         {{- else }}
         proto_msg.add_{{ .FieldName }}({{ snakecase .FieldName }}_arr[i]);
+        {{- end }}
+    }
+    {{- else if .IsMap }}
+    // --- Map Field ---
+    godot::Dictionary {{ snakecase .FieldName }}_dict = this->{{ snakecase .FieldName }};
+    godot::Array keys_{{ snakecase .FieldName }} = {{ snakecase .FieldName }}_dict.keys();
+    for (int i = 0; i < keys_{{ snakecase .FieldName }}.size(); i++) {
+        auto key_var = keys_{{ snakecase .FieldName }}[i];
+        auto val_var = {{ snakecase .FieldName }}_dict[key_var];
+
+        // Key
+        {{- if eq .MapKeyGodotType "godot::String" }}
+        std::string k = ((godot::String)key_var).utf8().get_data();
+        {{- else }}
+        auto k = ({{ .MapKeyGodotType }})key_var;
+        {{- end }}
+
+        // Value
+        {{- if .MapValueIsCustom }}
+        godot::Object* obj = val_var;
+        {{ .MapValueGodotType }}* wrapper = godot::Object::cast_to<{{ .MapValueGodotType }}>(obj);
+        if (wrapper) {
+             godot::PackedByteArray child_bytes = wrapper->to_byte_array();
+             (*proto_msg.mutable_{{ .FieldName }}())[k].ParseFromArray(child_bytes.ptr(), child_bytes.size());
+        }
+        {{- else if eq .MapValueGodotType "godot::String" }}
+        (*proto_msg.mutable_{{ .FieldName }}())[k] = ((godot::String)val_var).utf8().get_data();
+        {{- else }}
+        (*proto_msg.mutable_{{ .FieldName }}())[k] = ({{ .MapValueGodotType }})val_var;
         {{- end }}
     }
     {{- else }}
@@ -144,6 +176,33 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
         {{- else }}
         this->{{ snakecase .FieldName }}.push_back(it);
         {{- end }}
+    }
+    {{- else if .IsMap }}
+    this->{{ snakecase .FieldName }}.clear();
+    for (auto const& [key, val] : proto_msg.{{ .FieldName }}()) {
+        godot::Variant k;
+        {{- if eq .MapKeyGodotType "godot::String" }}
+        k = godot::String(key.c_str());
+        {{- else }}
+        k = key;
+        {{- end }}
+
+        godot::Variant v;
+        {{- if .MapValueIsCustom }}
+        {{ .MapValueGodotType }}* wrapper = memnew({{ .MapValueGodotType }});
+        std::string child_data = val.SerializeAsString();
+        godot::PackedByteArray child_bytes;
+        child_bytes.resize(child_data.size());
+        memcpy(child_bytes.ptrw(), child_data.data(), child_data.size());
+        wrapper->from_byte_array(child_bytes);
+        v = wrapper;
+        {{- else if eq .MapValueGodotType "godot::String" }}
+        v = godot::String(val.c_str());
+        {{- else }}
+        v = val;
+        {{- end }}
+
+        this->{{ snakecase .FieldName }}[k] = v;
     }
     {{- else }}
     // --- Singular Field ---
