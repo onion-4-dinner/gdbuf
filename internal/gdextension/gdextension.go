@@ -25,25 +25,51 @@ func NewGDExtensionBuilder(logger *slog.Logger) *GDExtensionBuilder {
 	}
 }
 
-func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) error {
-	buildDir, err := os.MkdirTemp("", "gdbuf-build-")
+func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string, generateOnly bool) error {
+	// Determine build directory: UserCacheDir/gdbuf
+	userCacheDir, err := os.UserCacheDir()
+	var buildDir string
 	if err != nil {
+		// Fallback
+		buildDir = filepath.Join(".", ".gdbuf_cache")
+	} else {
+		buildDir = filepath.Join(userCacheDir, "gdbuf")
+	}
+
+	if err := os.MkdirAll(buildDir, 0755); err != nil {
 		return fmt.Errorf("could not make build directory: %w", err)
 	}
 
-	gde.logger.Info("starting gdextension build", "build_dir", buildDir)
+	gde.logger.Info("preparing gdextension build environment", "build_dir", buildDir)
 
 	buildEnv, err := fs.Sub(buildEnvFS, "buildenv")
 	if err != nil {
-		return fmt.Errorf("could not make build directory: %w", err)
+		return fmt.Errorf("could not get build environment fs: %w", err)
 	}
 
 	if err = copyFS(buildEnv, buildDir); err != nil {
-		return fmt.Errorf("could not copy build environment to temp directory: %w", err)
+		return fmt.Errorf("could not copy build environment to build directory: %w", err)
 	}
 
 	if err = copyFS(os.DirFS(generatedCppSourceDir), buildDir); err != nil {
-		return fmt.Errorf("could not copy custom build files to temp directory: %w", err)
+		return fmt.Errorf("could not copy custom build files to build directory: %w", err)
+	}
+
+	// Copy doc_classes from source to build dir if they exist (to be packaged later)
+	docsSrc := filepath.Join(generatedCppSourceDir, "doc_classes")
+	if _, err := os.Stat(docsSrc); err == nil {
+		docsDest := filepath.Join(buildDir, "doc_classes")
+		if err := os.MkdirAll(docsDest, 0755); err != nil {
+			return fmt.Errorf("could not create docs directory in build dir: %w", err)
+		}
+		if err := copyFS(os.DirFS(docsSrc), docsDest); err != nil {
+			return fmt.Errorf("could not copy doc files to build dir: %w", err)
+		}
+	}
+
+	if generateOnly {
+		gde.logger.Info("skipping build step as --generate-only was provided")
+		return nil
 	}
 
 	// all files are in place, try to build
@@ -84,15 +110,14 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) er
 		return fmt.Errorf("could not copy build output to output directory: %w", err)
 	}
 
-	// Copy doc_classes
-	docsSrc := filepath.Join(buildDir, "doc_classes")
+	// Also copy doc_classes to the final output (addon)
 	if _, err := os.Stat(docsSrc); err == nil {
 		docsDest := filepath.Join(outputDir, "doc_classes")
 		if err := os.MkdirAll(docsDest, 0755); err != nil {
-			return fmt.Errorf("could not create docs directory: %w", err)
+			return fmt.Errorf("could not create docs directory in output: %w", err)
 		}
 		if err := copyFS(os.DirFS(docsSrc), docsDest); err != nil {
-			return fmt.Errorf("could not copy doc files: %w", err)
+			return fmt.Errorf("could not copy doc files to output: %w", err)
 		}
 	}
 

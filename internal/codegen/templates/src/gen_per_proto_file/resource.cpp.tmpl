@@ -159,7 +159,7 @@ godot::PackedByteArray {{ $className }}::to_byte_array() const {
 
     // --- Handling Nested Custom Messages ---
     {{- else if .IsCustomType }}
-    if (this->{{ snakecase .FieldName }} != nullptr) {
+    if (this->{{ snakecase .FieldName }}.is_valid()) {
         godot::PackedByteArray child_bytes = this->{{ snakecase .FieldName }}->to_byte_array();
         proto_msg.mutable_{{ .FieldName }}()->ParseFromArray(child_bytes.ptr(), child_bytes.size());
     }
@@ -189,12 +189,12 @@ godot::PackedByteArray {{ $className }}::to_byte_array() const {
 }
 
 // Deserialize
-void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
+godot::Error {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
     {{- $cppNamespace := replace "." "::" $packageName }}
     {{ if $cppNamespace }}::{{ $cppNamespace }}::{{ else }}::{{ end }}{{ .MessageName }} proto_msg;
     if (!proto_msg.ParseFromArray(p_bytes.ptr(), p_bytes.size())) {
         godot::UtilityFunctions::printerr("Failed to parse {{ .MessageName }} from bytes");
-        return;
+        return godot::ERR_PARSE_ERROR;
     }
 
     // Clear Oneof fields first to avoid lingering pointers
@@ -202,7 +202,7 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
     {{- range .Fields }}
     // Clear {{ .FieldName }} ({{ .GodotType }})
       {{- if .IsCustomType }}
-    this->{{ snakecase .FieldName }} = nullptr;
+    this->{{ snakecase .FieldName }} = godot::Ref<{{ .GodotType }}>();
       {{- else if eq .GodotType "godot::String" }}
     this->{{ snakecase .FieldName }} = "";
       {{- else if eq .GodotType "godot::PackedByteArray" }}
@@ -220,7 +220,8 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
     this->{{ snakecase .FieldName }}.clear();
     for (const auto& it : proto_msg.{{ .FieldName }}()) {
         {{- if .IsInnerCustomType }}
-        {{ .InnerGodotType }}* wrapper = memnew({{ .InnerGodotType }});
+        godot::Ref<{{ .InnerGodotType }}> wrapper;
+        wrapper.instantiate();
         std::string child_data = it.SerializeAsString();
         godot::PackedByteArray child_bytes;
         child_bytes.resize(child_data.size());
@@ -245,7 +246,8 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
 
         godot::Variant v;
         {{- if .MapValueIsCustom }}
-        {{ .MapValueGodotType }}* wrapper = memnew({{ .MapValueGodotType }});
+        godot::Ref<{{ .MapValueGodotType }}> wrapper;
+        wrapper.instantiate();
         std::string child_data = val.SerializeAsString();
         godot::PackedByteArray child_bytes;
         child_bytes.resize(child_data.size());
@@ -315,8 +317,8 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
     // --- Handling Nested Custom Messages ---
     {{- else if .IsCustomType }}
     if (proto_msg.has_{{ .FieldName }}()) {
-        if (this->{{ snakecase .FieldName }} == nullptr) {
-             this->{{ snakecase .FieldName }} = memnew({{ .GodotType }}); 
+        if (!this->{{ snakecase .FieldName }}.is_valid()) {
+             this->{{ snakecase .FieldName }}.instantiate();
         }
         std::string child_data = proto_msg.{{ .FieldName }}().SerializeAsString();
         godot::PackedByteArray child_bytes;
@@ -342,6 +344,8 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
     {{- end }}
     {{- end }} // End IsRepeated
     {{- end }} // End Fields Loop
+    
+    return godot::OK;
 }
 
 {{- range .Oneofs }}
@@ -353,14 +357,14 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
 {{- range .Fields }}
   {{- $currentField := . }}
   {{- if .IsCustomType }}
-{{ .GodotType }}* {{ $className }}::get_{{ snakecase .FieldName }}() {
+godot::Ref<{{ .GodotType }}> {{ $className }}::get_{{ snakecase .FieldName }}() {
   return {{ snakecase .FieldName }};
 }
 
-void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }}* p_{{ snakecase .FieldName }}) {
+void {{ $className }}::set_{{ snakecase .FieldName }}(const godot::Ref<{{ .GodotType }}> p_{{ snakecase .FieldName }}) {
   {{- if .OneofName }}
   {{- $oneofName := .OneofName }}
-  if (p_{{ snakecase .FieldName }} != nullptr) {
+  if (p_{{ snakecase .FieldName }}.is_valid()) {
       // Clear other fields in {{ $oneofName }}
       {{- range $msgIndex, $msg := $.Messages }}
       {{- if eq $msg.ClassName $className }}
@@ -370,7 +374,7 @@ void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }}* p_{{ sna
       {{- if ne $field.FieldName $currentField.FieldName }}
       // Clear {{ $field.FieldName }} ({{ $field.GodotType }})
         {{- if $field.IsCustomType }}
-      this->{{ snakecase $field.FieldName }} = nullptr;
+      this->{{ snakecase $field.FieldName }} = godot::Ref<{{ $field.GodotType }}>();
         {{- else if eq $field.GodotType "godot::String" }}
       this->{{ snakecase $field.FieldName }} = "";
         {{- else if eq $field.GodotType "godot::PackedByteArray" }}
@@ -411,7 +415,7 @@ void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snak
     {{- if ne $field.FieldName $currentField.FieldName }}
     // Clear {{ $field.FieldName }} ({{ $field.GodotType }})
       {{- if $field.IsCustomType }}
-    this->{{ snakecase $field.FieldName }} = nullptr;
+    this->{{ snakecase $field.FieldName }} = godot::Ref<{{ $field.GodotType }}>();
       {{- else if eq $field.GodotType "godot::String" }}
     this->{{ snakecase $field.FieldName }} = "";
       {{- else if eq $field.GodotType "godot::PackedByteArray" }}

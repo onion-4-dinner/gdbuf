@@ -5,6 +5,7 @@
 
 #include <string>
 #include "godot_cpp/classes/resource.hpp"
+#include "godot_cpp/classes/ref.hpp"
 #include "godot_cpp/classes/wrapped.hpp"
 #include "{{ $protoFileNameNoExtension }}.pb.h"
 #include <cstdint> // Required for int64_t
@@ -12,6 +13,10 @@
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/variant.hpp>
+
+{{- range .Dependencies }}
+#include "{{ . }}"
+{{- end }}
 
 {{- range .ForwardDecls }}
 namespace {{ .Namespace }} {
@@ -51,7 +56,7 @@ class {{ $className }} : public godot::Resource {
 
     {{- range .Fields }}
       {{- if .IsCustomType }}
-    {{ .GodotType }}* {{ snakecase .FieldName }}{};
+    godot::Ref<{{ .GodotType }}> {{ snakecase .FieldName }};
       {{- else }}
     {{ .GodotType }} {{ snakecase .FieldName }}{};
       {{- end }}
@@ -63,7 +68,7 @@ class {{ $className }} : public godot::Resource {
     godot::String get_proto_file_name();
 
     godot::PackedByteArray to_byte_array() const;
-    void from_byte_array(const godot::PackedByteArray &p_bytes);
+    godot::Error from_byte_array(const godot::PackedByteArray &p_bytes);
     godot::String _to_string() const;
 
     {{- range .Oneofs }}
@@ -72,8 +77,8 @@ class {{ $className }} : public godot::Resource {
 
     {{- range .Fields }}
       {{- if .IsCustomType }}
-    {{ .GodotType }}* get_{{ .FieldName }}();
-    void set_{{ snakecase .FieldName }}({{ .GodotType }}* p_{{ snakecase .FieldName }});
+    godot::Ref<{{ .GodotType }}> get_{{ .FieldName }}();
+    void set_{{ snakecase .FieldName }}(const godot::Ref<{{ .GodotType }}> p_{{ snakecase .FieldName }});
       {{- else }}
     {{ .GodotType }} get_{{ .FieldName }}();
     void set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snakecase .FieldName }});

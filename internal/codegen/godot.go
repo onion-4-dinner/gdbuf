@@ -27,6 +27,25 @@ var protoGodotTypeMap = map[descriptorpb.FieldDescriptorProto_Type]string{
 	descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: "int64_t",
 }
 
+type godotTypeInfo struct {
+	GodotType      string
+	GodotClassName string
+}
+
+var wktMap = map[string]godotTypeInfo{
+	"Timestamp":   {"int64_t", "int"},
+	"Duration":    {"double", "float"},
+	"Struct":      {"godot::Dictionary", "Dictionary"},
+	"Any":         {"godot::Dictionary", "Dictionary"},
+	"ListValue":   {"godot::Array", "Array"},
+	"Value":       {"godot::Variant", "Variant"},
+	"Empty":       {"godot::Variant", "Variant"},
+	"StringValue": {"godot::String", "String"},
+	"Int32Value":  {"int32_t", "int"},
+	"BoolValue":   {"bool", "bool"},
+	"FieldMask":   {"godot::PackedStringArray", "PackedStringArray"},
+}
+
 func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath string, fileToMsgs map[string][]string, fileToEnum map[string][]string, allMessageDescriptors map[string]*descriptorpb.DescriptorProto, typeToGodotName map[string]string) (godotType string, godotClassName string, isCustom bool, isEnum bool, srcFile string, err error) {
 	fieldType := *field.GetType().Enum()
 	fullTypeName := field.GetTypeName()
@@ -59,43 +78,19 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 
 		if srcFile == "google::protobuf" {
 			isCustom = false
-			// Handle WKTs by short name for switch convenience, or full name
+			// Handle WKTs by short name
 			shortName := fullTypeName
 			if lastDot := strings.LastIndex(fullTypeName, "."); lastDot != -1 {
 				shortName = fullTypeName[lastDot+1:]
 			}
-			switch shortName {
-			case "Timestamp":
-				godotType = "int64_t"
-				godotClassName = "int"
-			case "Duration":
-				godotType = "double"
-				godotClassName = "float"
-			case "Struct", "Any":
-				godotType = "godot::Dictionary"
-				godotClassName = "Dictionary"
-			case "ListValue":
-				godotType = "godot::Array"
-				godotClassName = "Array"
-			case "Value", "Empty":
-				godotType = "godot::Variant"
-				godotClassName = "Variant"
-			case "StringValue":
-				godotType = "godot::String"
-				godotClassName = "String"
-			case "Int32Value":
-				godotType = "int32_t"
-				godotClassName = "int"
-			case "BoolValue":
-				godotType = "bool"
-				godotClassName = "bool"
-			case "FieldMask":
-				godotType = "godot::PackedStringArray"
-				godotClassName = "PackedStringArray"
-			default:
+
+			if info, ok := wktMap[shortName]; ok {
+				godotType = info.GodotType
+				godotClassName = info.GodotClassName
+			} else {
 				isCustom = true
 				godotType = fmt.Sprintf("google::protobuf::%s", shortName)
-				godotClassName = shortName // Assuming WKTs wrappers are registered with simple names or not handled as resources
+				godotClassName = shortName
 			}
 		} else {
 			isCustom = true

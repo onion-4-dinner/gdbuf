@@ -38,6 +38,7 @@ func main() {
 	cppOutputDirPtr := flag.String("genout", ".", "generated proto c++ code output path")
 	extensionNamePtr := flag.String("name", "gdbufgen", "name of the generated gdextension")
 	extensionArtifactOutputDirPtr := flag.String("out", "./out", "output directory location of the generated gdextension")
+	generateOnlyPtr := flag.Bool("generate-only", false, "only generate c++ code, do not compile gdextension")
 
 	flag.Parse()
 
@@ -107,7 +108,7 @@ func main() {
 
 	gdExtensionBuilder := gdextension.NewGDExtensionBuilder(logger)
 
-	err = gdExtensionBuilder.Build(*cppOutputDirPtr, *extensionArtifactOutputDirPtr)
+	err = gdExtensionBuilder.Build(*cppOutputDirPtr, *extensionArtifactOutputDirPtr, *generateOnlyPtr)
 	if err != nil {
 		logger.Error("problem building gdextension", "err", err)
 		os.Exit(1)

@@ -46,6 +46,7 @@ Run `gdbuf` pointing to your Protobuf definitions directory. It will handle pars
 - `--include`: Additional directories to include for resolving imports. Can be specified multiple times.
 - `--out`: Directory where the compiled GDExtension (library + `.gdextension` file) will be placed (Default: `./out`).
 - `--genout`: Directory where the intermediate C++ source code will be generated (Default: `.`).
+- `--generate-only`: Only generate the C++ source code, skipping the GDExtension compilation step (Default: `false`).
 - `--name`: Name of the GDExtension library (Default: `gdbufgen`).
 
 ## In Godot
