@@ -5,6 +5,12 @@
 
 ---
 
+Note: This project was developed with the assistance of AI coding tool [OpenCode](https://opencode.ai/) using the [Google Gemini 3](https://blog.google/products/gemini/gemini-3/) model.
+
+Much care and guidance was exercised.
+
+---
+
 ## Why `gdbuf`?
 
 - **Native Resources:** Your Protobuf messages become first-class Godot `Resource` objects. Create, edit, and save them (`.tres`) directly in the Godot Editor.
