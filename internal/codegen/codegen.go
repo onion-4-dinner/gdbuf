@@ -40,6 +40,7 @@ type templateData struct {
 	GDExtensionName string
 	ProtobufVersion string
 	ProtoData       protoData
+	GlobalEnums     []protoEnum
 }
 
 type protoData struct {
@@ -66,6 +67,7 @@ type protoMessage struct {
 	Description string
 	Fields      []protoMessageField
 	Oneofs      []protoOneof
+	Enums       []protoEnum
 }
 
 type protoOneof struct {
@@ -119,7 +121,7 @@ func NewCodeGenerator(logger *slog.Logger, destinationDirectoryPath, extensionNa
 		logger:                   logger,
 		destinationDirectoryPath: destinationDirectoryPath,
 		templates:                tmpl,
-		extensionName:            extensionName,
+		extensionName:            strings.ReplaceAll(extensionName, "-", "_"),
 		protobufVersion:          protobufVersion,
 	}, nil
 }
@@ -205,6 +207,7 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 		GDExtensionName: cg.extensionName,
 		ProtobufVersion: cg.protobufVersion,
 		ProtoData:       *protoData,
+		GlobalEnums:     cg.extractGlobalEnums(fileDescriptorSet),
 	}
 
 	oneTimeTemplates := map[string]string{
@@ -214,6 +217,8 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 		"register_types.cpp.tmpl":       "src/register_types.cpp",
 		"messages.h.tmpl":               "src/messages.h",
 		"messages.cpp.tmpl":             "src/messages.cpp",
+		"global_enums.h.tmpl":           "src/global_enums.h",
+		"global_enums.cpp.tmpl":         "src/global_enums.cpp",
 	}
 
 	for templateName, outputPath := range oneTimeTemplates {
@@ -249,6 +254,19 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 			if err := cg.executeTemplate("class_doc.xml.tmpl", outputPath, msg); err != nil {
 				return fmt.Errorf("could not execute template class_doc.xml.tmpl for message %s: %w", msg.MessageName, err)
 			}
+		}
+	}
+
+	// Generate documentation for GlobalEnums
+	if len(templateData.GlobalEnums) > 0 {
+		globalEnumsMsg := protoMessage{
+			ClassName:   cg.extensionName + "Enums",
+			Description: "Contains all top-level enums defined in proto files.",
+			Enums:       templateData.GlobalEnums,
+		}
+		outputPath := filepath.Join(cg.destinationDirectoryPath, "doc_classes", globalEnumsMsg.ClassName+".xml")
+		if err := cg.executeTemplate("class_doc.xml.tmpl", outputPath, globalEnumsMsg); err != nil {
+			return fmt.Errorf("could not execute template class_doc.xml.tmpl for global enums: %w", err)
 		}
 	}
 
@@ -522,4 +540,26 @@ func getComments(sc *descriptorpb.SourceCodeInfo, path []int32) string {
 		}
 	}
 	return ""
+}
+
+func (cg *CodeGenerator) extractGlobalEnums(fileDescriptorSet []*descriptorpb.FileDescriptorProto) []protoEnum {
+	var globalEnums []protoEnum
+	for _, file := range fileDescriptorSet {
+		for _, enum := range file.GetEnumType() {
+			var protoEnum protoEnum
+			protoEnum.EnumName = enum.GetName()
+			enum.GetOptions().ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+				protoEnum.Options = append(protoEnum.Options, fd.TextName())
+				return true
+			})
+			// Manual extraction of enum values because the above reflection might not get the values themselves easily if we just want names
+			// Actually, we need the values from the descriptor
+			protoEnum.Options = nil // Reset
+			for _, val := range enum.GetValue() {
+				protoEnum.Options = append(protoEnum.Options, val.GetName())
+			}
+			globalEnums = append(globalEnums, protoEnum)
+		}
+	}
+	return globalEnums
 }

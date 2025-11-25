@@ -30,3 +30,9 @@ test-godot: test-build-extension
 
 .PHONY: test-full
 test-full: test-build test-godot
+
+.PHONY: test-hyphen
+test-hyphen: test-clean test-build
+	mkdir -p test/out-hyphen
+	mkdir -p test/genout-hyphen
+	go run main.go --proto test/proto --include . --genout test/genout-hyphen --out test/out-hyphen --name "my-hyphenated-extension"

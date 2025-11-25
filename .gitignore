@@ -35,3 +35,10 @@ test/*.desc.binpb
 test/out/
 test/genout/
 bin/
+
+# Generated test artifacts
+test/godot_project/addons/gdbufgen/
+test/godot_project/doc_dump*/
+test/godot_project/check_*.gd
+test/godot_project/.godot/
+test/proto/comment_test.proto
