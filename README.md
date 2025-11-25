@@ -1,46 +1,85 @@
 # `gdbuf`
-Use your Protobuf messages in Godot
+**Seamlessly use Google Protobuf messages as native Resources in Godot.**
+
+`gdbuf` compiles your `.proto` files into a high-performance GDExtension (C++), automatically bridging the gap between your network/data layer and the Godot Engine.
 
 ---
 
-Note that this software is early and development; don't expect everything to work.
+Note: This project was developed with the assistance of AI coding tool [OpenCode](https://opencode.ai/) using the [Google Gemini 3](https://blog.google/products/gemini/gemini-3/) model.
 
-## Quick Start
+Much care and guidance was exercised.
 
-0. Prerequisites
-You will need the following software installed:
-- `Go` >=1.25
-- `protoc`
-
-1. Generate a protobuf description file from your protobuf definition files.
-```
-protoc --descriptor_set_out=my_proto.desc.binpb <PATH_TO_YOUR_PROTO_FILES>
-```
-Note: replace `my_proto` with your proto project name.
-
-2. Clone this repository.
-```
-git clone https://github.com/LJ-Software/gdbuf.git
-```
-
-
-3. Bring your protobuf description file into the gdbuf directory.
-```
-mv my_proto.desc.binpb gdbuf && cd gdbuf
-```
-
-4. Run `gdbuf` on your protobuf description file to generate the c++ gdextension code
-```
-mkdir -p gen
-go run main.go --proto-desc my_proto.desc.binpb --out gen
-```
-
-5. Compile the gdextension with your newly generated code
-```
-COMING SOON
-```
 ---
 
-## More Info
+## Why `gdbuf`?
 
-- [Testing `gdbuf`](test/README.md)
+- **Native Resources:** Your Protobuf messages become first-class Godot `Resource` objects. Create, edit, and save them (`.tres`) directly in the Godot Editor.
+- **Inspector Integration:** View and modify message fields in the Inspector with full type support.
+- **Documentation:** Comments in your `.proto` files are automatically converted into Godot Editor tooltips and documentation.
+- **Performance:** Built on GDExtension and C++ for maximum speed.
+- **Zero Boilerplate:** No manual C++ coding required. Just run the tool.
+
+## Installation
+
+### Prerequisites
+- **Go** (1.21+)
+- **protoc** (The Protocol Buffers compiler) installed and in your system PATH.
+- **C++ Compiler** (gcc/clang/msvc) & **CMake** (for building the extension).
+
+### Build `gdbuf`
+```bash
+git clone --recursive https://github.com/LJ-Software/gdbuf.git
+cd gdbuf
+make build
+# The binary will be in bin/gdbuf
+```
+
+## Usage
+
+Run `gdbuf` pointing to your Protobuf definitions directory. It will handle parsing, code generation, and compiling the GDExtension library for you.
+
+```bash
+./bin/gdbuf \
+  --proto ./path/to/your/protos \
+  --include ./path/to/your/protos/public \
+  --include ./path/to/your/protos/private \
+  --out ./path/to/godot_project/addons/my_proto_extension \
+  --name MyProtoLib
+```
+
+### Arguments
+- `--proto`: Path to the directory containing your `.proto` files (Required).
+- `--include`: Additional directories to include for resolving imports. Can be specified multiple times.
+- `--out`: Directory where the compiled GDExtension (library + `.gdextension` file) will be placed (Default: `./out`).
+- `--genout`: Directory where the intermediate C++ source code will be generated (Default: `.`).
+- `--generate-only`: Only generate the C++ source code, skipping the GDExtension compilation step (Default: `false`).
+- `--name`: Name of the GDExtension library (Default: `gdbufgen`).
+
+## In Godot
+
+Once the extension is generated and placed in your project:
+
+1. **Restart Godot** to load the new extension.
+2. **Use in GDScript:**
+   ```gdscript
+   # Create a message
+   var msg = MyMessage.new()
+   msg.health = 100
+   msg.name = "Player 1"
+
+   # Serialize
+   var bytes = msg.to_byte_array()
+   
+   # Save to disk
+   ResourceSaver.save(msg, "res://player_data.tres")
+   ```
+3. **Use in Editor:** Right-click in FileSystem -> New Resource -> Search for your message name.
+
+## Documentation
+
+- **[Features & Supported Types](docs/FEATURES.md)**: Detailed list of supported Protobuf features and how they map to Godot.
+- **[GDScript API Reference](docs/API.md)**: Detailed guide on using the generated GDScript API.
+- **[Developer Guide](docs/DEV.md)**: Architecture overview and guide for contributors.
+- **[Agent Guidelines](docs/AGENTS.md)**: Instructions for AI agents working on this codebase.
+- **[Testing](test/README.md)**: How to run the test suite.
+

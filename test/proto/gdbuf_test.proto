@@ -7,6 +7,8 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
+import "test/proto/dependency.proto";
+import "test/proto/nested/deeply/nested.proto";
 
 enum BasicTestEnum {
   BASIC_TEST_ENUM_UNSPECIFIED = 0;
@@ -40,25 +42,12 @@ message SpecialFieldTypesMessage {
   repeated double repeated_packed_double = 3 [packed = true];
 }
 
-message MapMessage {
-  map<string, int32> string_int_map = 1;
-  map<int64, BasicTestMessage> int_message_map = 2;
-}
-
 message OneOfMessage {
   oneof test_oneof {
     string string_field = 1;
     int32 int32_field = 2;
     BasicTestMessage message_field = 3;
   }
-}
-
-message OuterNestedMessage {
-  message InnerNestedMessage {
-    string inner_nested_string = 1;
-  }
-  string outer_nested_string = 1;
-  InnerNestedMessage inner_message = 2;
 }
 
 message GoogleWellKnownTypesMessage {
@@ -69,6 +58,31 @@ message GoogleWellKnownTypesMessage {
   google.protobuf.Int32Value int32_wrapper = 5;
   google.protobuf.Struct struct_field = 6;
   google.protobuf.Empty empty_field = 7;
+}
+
+message MapMessage {
+  map<string, int32> string_int_map = 1;
+  map<int32, BasicTestMessage> int_msg_map = 2;
+  map<string, string> string_string_map = 3;
+}
+
+message OuterNestedMessage {
+  message InnerNestedMessage {
+    string inner_string = 1;
+  }
+  string outer_string = 1;
+  InnerNestedMessage inner_msg = 2;
+}
+
+message RepeatedComplexMessage {
+   repeated BasicTestMessage messages = 1;
+   repeated BasicTestEnum enums = 2;
+}
+
+message RecursiveMessage {
+   string name = 1;
+   repeated RecursiveMessage children = 2;
+   RecursiveMessage parent = 3;
 }
 
 message ReservedMessage {
@@ -84,5 +98,8 @@ message EverythingMessage {
   OuterNestedMessage nested_message = 5;
   GoogleWellKnownTypesMessage well_known_types_message = 6;
   BasicTestEnum basic_enum = 7;
-  repeated OuterNestedMessage.InnerNestedMessage repeated_inner_nested_message = 8;
+  dependency.DependencyMessage dependency_message = 8;
+  RepeatedComplexMessage repeated_complex = 9;
+  RecursiveMessage recursive = 10;
+  nested.deeply.DeeplyNestedMessage deeply_nested = 11;
 }

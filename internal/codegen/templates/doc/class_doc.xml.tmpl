@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="{{ .ClassName }}" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+{{ if .Description }}{{ .Description }}{{ else }}Proto description missing.{{ end }}
+	</brief_description>
+	<description>
+{{ if .Description }}{{ .Description }}{{ else }}Proto description missing.{{ end }}
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+        {{- range .Fields }}
+		<member name="{{ snakecase .FieldName }}" type="{{ godotDocType .GodotType .IsCustomType .IsEnum }}" setter="set_{{ snakecase .FieldName }}" getter="get_{{ snakecase .FieldName }}">{{ if .Description }}{{ .Description }}{{ else }}Proto description missing.{{ end }}</member>
+        {{- end }}
+	</members>
+</class>

@@ -1,7 +1,8 @@
 #include "register_types.h"
-{{ range .ProtoData.Files }}
-#include "{{ .FileName }}.h"
-{{ end }}
+{{- range .ProtoData.Files }}
+{{- $protoFilePathNoExtension := trimSuffix ".proto" .ProtoPath }}
+#include "{{ $protoFilePathNoExtension }}.h"
+{{- end }}
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
@@ -9,15 +10,20 @@
 using namespace godot;
 
 void initialize_gdextension_types(ModuleInitializationLevel p_level){
-  if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
+  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
     return;
-  {{ range .ProtoData.Files }}
-  GDREGISTER_CLASS({{ .ClassName }});
-  {{ end }}
+  {{- range .ProtoData.Files }}
+  {{- $protoPathNoExtension := trimSuffix ".proto" .ProtoPath }}
+  {{- $protoFileNameNoExtension := base $protoPathNoExtension }}
+  {{- range .Messages }}
+  {{- $className := .ClassName }}
+  GDREGISTER_CLASS(gdbuf::{{ snakecase $protoFileNameNoExtension }}::{{ $className }});
+  {{- end }}
+  {{- end }}
 }
 
 void uninitialize_gdextension_types(ModuleInitializationLevel p_level) {
-  if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
+  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
     return;
 }
 

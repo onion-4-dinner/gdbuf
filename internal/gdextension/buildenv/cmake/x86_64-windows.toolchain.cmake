@@ -12,8 +12,3 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc CACHE STRING "C compiler")
 set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++ CACHE STRING "C++ compiler")
 set(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres CACHE STRING "Resource compiler")
-
-# Include the vcpkg toolchain file
-if(DEFINED ENV{WORKSPACE})
-  include("$ENV{WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-endif()

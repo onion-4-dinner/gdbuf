@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -35,7 +37,7 @@ func (c *ProtoCompiler) GetVersion() string {
 	return c.protobufVersion
 }
 
-func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descriptorpb.FileDescriptorProto, error) {
+func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string, includeDirs []string) ([]*descriptorpb.FileDescriptorProto, error) {
 	var descriptorSet []*descriptorpb.FileDescriptorProto
 
 	protoFilePaths, err := getProtoFilesInDir(protoFilesDirPath)
@@ -45,7 +47,21 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descrip
 
 	tmpDir := os.TempDir()
 	protoDescriptorPath := filepath.Join(tmpDir, "gdbuf.desc.binpb")
-	buildProtoDescriptorCmd := exec.Command("protoc", append([]string{fmt.Sprintf("--descriptor_set_out=%s", protoDescriptorPath)}, protoFilePaths...)...)
+	args := []string{fmt.Sprintf("--descriptor_set_out=%s", protoDescriptorPath)}
+	args = append(args, "--include_source_info")
+
+	if len(includeDirs) > 0 {
+		for _, dir := range includeDirs {
+			args = append(args, "-I", dir)
+		}
+	} else {
+		args = append(args, "-I", ".") // Include current dir as the include root
+		args = append(args, "-I", protoFilesDirPath)
+	}
+
+	// Actually, well-known types might be needed. protoc usually finds them if installed.
+	args = append(args, protoFilePaths...)
+	buildProtoDescriptorCmd := exec.Command("protoc", args...)
 
 	var stderr bytes.Buffer
 	buildProtoDescriptorCmd.Stderr = &stderr
@@ -69,9 +85,8 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descrip
 	return protoFileDescriptorSet.GetFile(), nil
 }
 
-func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
-	compileOutDir := filepath.Join(os.TempDir(), "gdbuf-build")
-	err := os.MkdirAll(compileOutDir, 0755)
+func (c *ProtoCompiler) CompileNanopb(protoFilesDirPath string, includeDirs []string, generatorDir string) (string, error) {
+	tempProtocBuildDir, err := os.MkdirTemp("", "gdbuf-build-")
 	if err != nil {
 		return "", fmt.Errorf("could not make temp directory for proto cpp build: %w", err)
 	}
@@ -80,7 +95,47 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not get proto files from %s: %w", protoFilesDirPath, err)
 	}
-	compileCppCmd := exec.Command("protoc", append([]string{fmt.Sprintf("--cpp_out=%s", compileOutDir)}, protoFilePaths...)...)
+
+	pluginName := "protoc-gen-nanopb"
+	if runtime.GOOS == "windows" {
+		pluginName += ".bat"
+	}
+	pluginPath := filepath.Join(generatorDir, pluginName)
+	if err := os.Chmod(pluginPath, 0755); err != nil {
+		c.logger.Warn("could not chmod plugin", "path", pluginPath, "err", err)
+	}
+
+	// Use FT_POINTER for strings/arrays to use malloc/free instead of static buffers/callbacks
+	args := []string{
+		fmt.Sprintf("--plugin=protoc-gen-nanopb=%s", pluginPath),
+		"--nanopb_opt=-s type:FT_POINTER",
+		fmt.Sprintf("--nanopb_out=%s", tempProtocBuildDir),
+	}
+
+	if len(includeDirs) > 0 {
+		for _, dir := range includeDirs {
+			args = append(args, "-I", dir)
+		}
+	} else {
+		args = append(args, "-I", ".")
+		args = append(args, "-I", protoFilesDirPath)
+	}
+
+	args = append(args, protoFilePaths...)
+
+	// Add Well-Known Types (WKTs) to ensure they are compiled with Nanopb
+	wkts := []string{
+		"google/protobuf/any.proto",
+		"google/protobuf/duration.proto",
+		"google/protobuf/struct.proto",
+		"google/protobuf/timestamp.proto",
+		"google/protobuf/wrappers.proto",
+		"google/protobuf/field_mask.proto",
+		"google/protobuf/empty.proto",
+	}
+	args = append(args, wkts...)
+
+	compileCppCmd := exec.Command("protoc", args...)
 
 	var stderr bytes.Buffer
 	compileCppCmd.Stderr = &stderr
@@ -90,7 +145,7 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
 		return "", fmt.Errorf("could not compile cpp proto files with cmd [%v]: %s", compileCppCmd.Args, stderr.String())
 	}
 
-	return compileOutDir, nil
+	return tempProtocBuildDir, nil
 }
 
 func getProtocExecutableVersion() (string, error) {
@@ -99,7 +154,14 @@ func getProtocExecutableVersion() (string, error) {
 		return "", fmt.Errorf("could not build proto description file: %w", err)
 	}
 
-	versionParts := strings.Split(strings.ReplaceAll(strings.TrimPrefix(string(protoVersionCmdOut), "libprotoc "), "\n", ""), ".")
+	// Output format: "libprotoc 25.1" or similar
+	re := regexp.MustCompile(`libprotoc (\d+\.\d+)`)
+	matches := re.FindStringSubmatch(string(protoVersionCmdOut))
+	if len(matches) < 2 {
+		return "", fmt.Errorf("could not parse protoc version from output: %s", string(protoVersionCmdOut))
+	}
+
+	versionParts := strings.Split(matches[1], ".")
 	protoVersion := fmt.Sprintf("%s.%s.5", versionParts[1], versionParts[0]) // TODO: dont hardcode last part of version
 	return protoVersion, nil
 }
