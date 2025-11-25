@@ -72,6 +72,7 @@ Once the extension is generated and placed in your project:
 ## Documentation
 
 - **[Features & Supported Types](docs/FEATURES.md)**: Detailed list of supported Protobuf features and how they map to Godot.
+- **[GDScript API Reference](docs/API.md)**: Detailed guide on using the generated GDScript API.
 - **[Developer Guide](docs/DEV.md)**: Architecture overview and guide for contributors.
 - **[Agent Guidelines](docs/AGENTS.md)**: Instructions for AI agents working on this codebase.
 - **[Testing](test/README.md)**: How to run the test suite.
