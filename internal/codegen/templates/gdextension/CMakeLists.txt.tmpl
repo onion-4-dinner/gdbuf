@@ -1,6 +1,6 @@
 # Project metadata
 cmake_minimum_required(VERSION 3.16)
-project({{ .GDExtensionName }} VERSION 1.0 LANGUAGES CXX)
+project({{ .GDExtensionName }} VERSION 1.0 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -8,19 +8,24 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ensure things are ready to go
 if(DEFINED CMAKE_TOOLCHAIN_FILE)
   message(STATUS "CMAKE_TOOLCHAIN_FILE is set to: ${CMAKE_TOOLCHAIN_FILE}")
-else()
-  message(WARNING "CMAKE_TOOLCHAIN_FILE is not set. vcpkg dependencies might not be found.")
 endif()
 
 message(STATUS "Running with CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "Running with CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
-# get packages needed
-find_package(protobuf CONFIG REQUIRED)
+# Nanopb
+set(NANOPB_DIR "${CMAKE_SOURCE_DIR}/nanopb")
+set(NANOPB_SOURCES
+    "${NANOPB_DIR}/pb_common.c"
+    "${NANOPB_DIR}/pb_encode.c"
+    "${NANOPB_DIR}/pb_decode.c"
+)
+include_directories("${NANOPB_DIR}")
+add_definitions(-DPB_ENABLE_MALLOC) # Enable malloc for dynamic allocation
 
 # Source files
-file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.h" "src/*.cc")
-add_library({{ .GDExtensionName }} SHARED ${SOURCES})
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.h" "src/*.c" "src/*.cc")
+add_library({{ .GDExtensionName }} SHARED ${SOURCES} ${NANOPB_SOURCES})
 {{- range .ProtoData.Files }}
 target_include_directories({{ $.GDExtensionName }} PUBLIC ${CMAKE_SOURCE_DIR}/src/{{ dir .ProtoPath }})
 {{- end }}
@@ -28,9 +33,6 @@ target_include_directories({{ $.GDExtensionName }} PUBLIC ${CMAKE_SOURCE_DIR}/sr
 
 # where to build it to
 set(OUT_DIR "${CMAKE_BINARY_DIR}/bin")
-
-# setup dependencies
-target_link_libraries({{ .GDExtensionName }} PRIVATE protobuf::libprotobuf)
 
 # setup godot-cpp
 set(GODOTCPP_BUILD_PROFILE "${CMAKE_SOURCE_DIR}/build_profile.json")

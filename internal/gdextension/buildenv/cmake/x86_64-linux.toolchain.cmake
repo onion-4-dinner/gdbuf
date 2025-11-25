@@ -5,6 +5,3 @@ set(CMAKE_SYSTEM_PROCESSOR x86_64)
 # Use the host compilers but force 32-bit output
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
-
-# Include the vcpkg toolchain file
-include("$ENV{WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake")

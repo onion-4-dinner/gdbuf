@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -84,7 +85,7 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string, includeDirs
 	return protoFileDescriptorSet.GetFile(), nil
 }
 
-func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string, includeDirs []string) (string, error) {
+func (c *ProtoCompiler) CompileNanopb(protoFilesDirPath string, includeDirs []string, generatorDir string) (string, error) {
 	tempProtocBuildDir, err := os.MkdirTemp("", "gdbuf-build-")
 	if err != nil {
 		return "", fmt.Errorf("could not make temp directory for proto cpp build: %w", err)
@@ -94,7 +95,22 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string, includeDirs []strin
 	if err != nil {
 		return "", fmt.Errorf("could not get proto files from %s: %w", protoFilesDirPath, err)
 	}
-	args := []string{fmt.Sprintf("--cpp_out=%s", tempProtocBuildDir)}
+
+	pluginName := "protoc-gen-nanopb"
+	if runtime.GOOS == "windows" {
+		pluginName += ".bat"
+	}
+	pluginPath := filepath.Join(generatorDir, pluginName)
+	if err := os.Chmod(pluginPath, 0755); err != nil {
+		c.logger.Warn("could not chmod plugin", "path", pluginPath, "err", err)
+	}
+
+	// Use FT_POINTER for strings/arrays to use malloc/free instead of static buffers/callbacks
+	args := []string{
+		fmt.Sprintf("--plugin=protoc-gen-nanopb=%s", pluginPath),
+		"--nanopb_opt=-s type:FT_POINTER",
+		fmt.Sprintf("--nanopb_out=%s", tempProtocBuildDir),
+	}
 
 	if len(includeDirs) > 0 {
 		for _, dir := range includeDirs {
@@ -106,6 +122,19 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string, includeDirs []strin
 	}
 
 	args = append(args, protoFilePaths...)
+
+	// Add Well-Known Types (WKTs) to ensure they are compiled with Nanopb
+	wkts := []string{
+		"google/protobuf/any.proto",
+		"google/protobuf/duration.proto",
+		"google/protobuf/struct.proto",
+		"google/protobuf/timestamp.proto",
+		"google/protobuf/wrappers.proto",
+		"google/protobuf/field_mask.proto",
+		"google/protobuf/empty.proto",
+	}
+	args = append(args, wkts...)
+
 	compileCppCmd := exec.Command("protoc", args...)
 
 	var stderr bytes.Buffer

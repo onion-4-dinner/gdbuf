@@ -25,6 +25,14 @@ func NewGDExtensionBuilder(logger *slog.Logger) *GDExtensionBuilder {
 	}
 }
 
+func (gde *GDExtensionBuilder) ExtractNanopbGenerator(dst string) error {
+	genFS, err := fs.Sub(buildEnvFS, "buildenv/nanopb/generator")
+	if err != nil {
+		return err
+	}
+	return copyFS(genFS, dst)
+}
+
 func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string, generateOnly bool) error {
 	// Determine build directory: UserCacheDir/gdbuf
 	userCacheDir, err := os.UserCacheDir()
@@ -87,7 +95,6 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string, ge
 
 	buildCmd := exec.Command("make", buildTarget)
 	buildCmd.Env = os.Environ()
-	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("VCPKG_ROOT=%s", filepath.Join(buildDir, "vcpkg")))
 	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("WORKSPACE=%s", buildDir))
 	buildCmd.Dir = buildDir
 	buildCmd.Stdout = os.Stdout

@@ -69,6 +69,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Prepare Nanopb Generator (extracted to temp)
+	genTmpDir, err := os.MkdirTemp("", "nanopb-gen-")
+	if err != nil {
+		logger.Error("could not create temp dir for generator", "err", err)
+		os.Exit(1)
+	}
+	defer os.RemoveAll(genTmpDir)
+
+	gdExtensionBuilder := gdextension.NewGDExtensionBuilder(logger)
+	if err := gdExtensionBuilder.ExtractNanopbGenerator(genTmpDir); err != nil {
+		logger.Error("could not extract nanopb generator", "err", err)
+		os.Exit(1)
+	}
+
 	protoc, err := protoc.NewProtoCompiler(logger.WithGroup("protoc"))
 	if err != nil {
 		logger.Error("could not create new proto compiler", "err", err)
@@ -81,9 +95,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	compiledProtoCppTempDirPath, err := protoc.CompileCpp(*protoInputDirPtr, includeDirs)
+	compiledProtoCppTempDirPath, err := protoc.CompileNanopb(*protoInputDirPtr, includeDirs, genTmpDir)
 	if err != nil {
-		logger.Error("could not compile proto cpp", "err", err)
+		logger.Error("could not compile proto cpp (nanopb)", "err", err)
 		os.Exit(1)
 	}
 
@@ -105,8 +119,6 @@ func main() {
 		logger.Error("problem copying compiled cpp proto to directory", "err", err)
 		os.Exit(1)
 	}
-
-	gdExtensionBuilder := gdextension.NewGDExtensionBuilder(logger)
 
 	err = gdExtensionBuilder.Build(*cppOutputDirPtr, *extensionArtifactOutputDirPtr, *generateOnlyPtr)
 	if err != nil {

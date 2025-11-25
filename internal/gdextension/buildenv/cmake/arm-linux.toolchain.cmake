@@ -6,8 +6,3 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 # The GitHub Actions workflow installs 'g++-arm-linux-gnueabihf' which provides these.
 set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
-
-# Include the vcpkg toolchain file
-if(DEFINED ENV{WORKSPACE})
-  include("$ENV{WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-endif()

@@ -8,6 +8,8 @@
 #include "godot_cpp/classes/ref.hpp"
 #include "godot_cpp/classes/wrapped.hpp"
 #include "{{ $protoFileNameNoExtension }}.pb.h"
+#include <pb_encode.h>
+#include <pb_decode.h>
 #include <cstdint> // Required for int64_t
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/dictionary.hpp>

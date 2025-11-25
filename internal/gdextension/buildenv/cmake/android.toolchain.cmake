@@ -16,8 +16,3 @@ set(CMAKE_ANDROID_NDK "$ENV{ANDROID_NDK_HOME}")
 
 # Specify the C++ standard library to use
 set(CMAKE_ANDROID_STL_TYPE "c++_static")
-
-# Include the vcpkg toolchain file
-if(DEFINED ENV{WORKSPACE})
-  include("$ENV{WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-endif()

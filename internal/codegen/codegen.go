@@ -128,6 +128,12 @@ func getTemplateFuncMap() template.FuncMap {
 	f := sprig.FuncMap()
 	f["toPascalCase"] = toPascalCase
 	f["toUpper"] = strings.ToUpper
+	f["nanopbType"] = func(protoType string) string {
+		// Remove leading dot
+		s := strings.TrimPrefix(protoType, ".")
+		// Replace dots with underscores
+		return strings.ReplaceAll(s, ".", "_")
+	}
 	f["godotVariantType"] = func(godotType string, isCustom bool, isEnum bool) string {
 		if isEnum {
 			return "godot::Variant::INT"
@@ -203,7 +209,6 @@ func (cg *CodeGenerator) GenerateCode(fileDescriptorSet []*descriptorpb.FileDesc
 
 	oneTimeTemplates := map[string]string{
 		"CMakeLists.txt.tmpl":           "CMakeLists.txt",
-		"vcpkg.json.tmpl":               "vcpkg.json",
 		"gde-protobuf.gdextension.tmpl": "out/gde-protobuf.gdextension",
 		"register_types.h.tmpl":         "src/register_types.h",
 		"register_types.cpp.tmpl":       "src/register_types.cpp",
@@ -303,6 +308,7 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 		var protoFile protoFile
 		protoFile.ProtoPath = file.GetName()
 		protoFile.PackageName = file.GetPackage()
+		cg.logger.Info("processing proto file", "name", file.GetName(), "package", protoFile.PackageName)
 
 		pkg := file.GetPackage()
 		prefix := "."
