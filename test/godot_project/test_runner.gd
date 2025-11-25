@@ -12,6 +12,7 @@ func _init():
 	test_serialization()
 	test_nested_message()
 	test_enums()
+	test_to_string()
 
 	if tests_failed == 0:
 		print("ALL TESTS PASSED")
@@ -24,9 +25,30 @@ func assert_eq(actual, expected, message):
 	if actual != expected:
 		print("FAIL: " + message + " - Expected: " + str(expected) + ", Got: " + str(actual))
 		tests_failed += 1
-	else:
-		# print("PASS: " + message)
-		pass
+
+func test_to_string():
+	print("--- test_to_string ---")
+	var msg = BasicTestMessage.new()
+	msg.int32_field = 123
+	msg.string_field = "Hello World"
+	
+	var s = str(msg)
+	print("String representation: " + s)
+	assert_true(s.contains("BasicTestMessage {"), "Contains class name")
+	assert_true(s.contains("int32_field: 123"), "Contains int field")
+	assert_true(s.contains("string_field: \"Hello World\""), "Contains string field")
+	
+	var nested = OuterNestedMessage.new()
+	nested.outer_string = "Out"
+	var inner = OuterNestedMessageInnerNestedMessage.new()
+	inner.inner_string = "In"
+	nested.inner_msg = inner
+	
+	var s_nested = str(nested)
+	print("Nested string: " + s_nested)
+	assert_true(s_nested.contains("inner_msg: OuterNestedMessageInnerNestedMessage {"), "Contains nested object")
+	assert_true(s_nested.contains("inner_string: \"In\""), "Contains nested field")
+
 
 func assert_true(condition, message):
 	if not condition:

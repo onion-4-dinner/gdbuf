@@ -53,7 +53,41 @@ godot::String {{ $className }}::get_proto_file_name() {
 }
 
 godot::String {{ $className }}::_to_string() const {
-    return godot::String("{{ $className }} (Nanopb)");
+    godot::String output = "{{ $className }} {";
+    {{- range $i, $field := .Fields }}
+    {{- if gt $i 0 }}
+    output += ", ";
+    {{- end }}
+
+    output += "{{ .FieldName }}: ";
+
+    {{- if .OneofName }}
+    if (this->{{ snakecase .OneofName }}_case == k{{ toPascalCase .FieldName }}) {
+    {{- end }}
+
+    {{- if eq .GodotType "godot::String" }}
+        output += "\"";
+        output += this->{{ snakecase .FieldName }}.c_escape();
+        output += "\"";
+    {{- else if .IsCustomType }}
+        if (this->{{ snakecase .FieldName }}.is_valid()) {
+            output += godot::String(godot::Variant(this->{{ snakecase .FieldName }}));
+        } else {
+            output += "null";
+        }
+    {{- else }}
+        output += godot::String(godot::Variant(this->{{ snakecase .FieldName }}));
+    {{- end }}
+
+    {{- if .OneofName }}
+    } else {
+        output += "<not set>";
+    }
+    {{- end }}
+    {{- end }}
+
+    output += "}";
+    return output;
 }
 
 // Serialize
