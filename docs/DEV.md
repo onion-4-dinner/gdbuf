@@ -8,7 +8,7 @@ The program operates in a linear pipeline:
 1.  **Input Parsing**: Accepts a directory of `.proto` files and optional include directories for import resolution.
 2.  **Protoc Compilation**: Uses `protoc` to generate standard C++ headers/sources and a binary descriptor set (`.desc.binpb`).
 3.  **Code Generation**: Parses the descriptor set to understand the message structure, then executes Go `text/template` templates to generate Godot-specific C++ wrappers.
-4.  **GDExtension Compilation**: Orchestrates a CMake build to compile the generated wrappers + standard Protobuf C++ code into a shared library. It uses a persistent build cache (in `~/.cache/gdbuf` or local `.gdbuf_cache`) to enable incremental builds.
+4.  **GDExtension Compilation**: Orchestrates a CMake build to compile the generated wrappers + the embedded **Nanopb** library into a shared library. It uses a persistent build cache (in `~/.cache/gdbuf` or local `.gdbuf_cache`) to enable incremental builds.
 
 ## Codebase Structure
 
@@ -19,7 +19,7 @@ The program operates in a linear pipeline:
 -   **Responsibility**: Wraps the `protoc` command-line tool.
 -   **Key Functions**:
     -   `BuildDescriptorSet`: Runs `protoc --descriptor_set_out` to get a machine-readable definition of the proto files.
-    -   `CompileCpp`: Runs `protoc --cpp_out` to generate the standard C++ implementation of the messages.
+    -   `CompileNanopb`: Runs `protoc` with the `protoc-gen-nanopb` plugin to generate Nanopb C headers/sources (`.pb.h`, `.pb.c`).
 -   **Notes**: Enforces strict include paths (relative to current directory) to avoid aliasing issues.
 
 ### `internal/codegen`
@@ -34,7 +34,7 @@ The program operates in a linear pipeline:
 
 ### `internal/gdextension`
 -   **Responsibility**: Builds the final binary.
--   **`buildenv/`**: Contains the "build environment" (CMake lists, vcpkg config, godot-cpp submodule) embedded into the Go binary.
+-   **`buildenv/`**: Contains the "build environment" (CMake lists, godot-cpp submodule, nanopb submodule) embedded into the Go binary.
 -   **`gdextension.go`**: Manages the build process. It sets up a persistent build cache to avoid recompiling `godot-cpp` on every run. It copies generated sources into this cache and invokes `make`.
 
 ## Key Concepts
@@ -48,7 +48,7 @@ We map standard Proto types to Godot Variants:
 ### Resource Wrapper (`resource.h.tmpl`)
 Every Protobuf message is wrapped in a class inheriting from `godot::Resource`.
 -   **Properties**: Fields are registered with `ADD_PROPERTY`, making them visible in the Godot Inspector.
--   **Serialization**: We generate `to_byte_array()` and `from_byte_array()` methods that internally use the standard Protobuf `SerializeAsString()` and `ParseFromArray()`.
+-   **Serialization**: We generate `to_byte_array()` and `from_byte_array()` methods that internally use **Nanopb** functions (`pb_encode`, `pb_decode`) to serialize to/from the standard Protobuf binary format.
 -   **Memory Management**: Custom message fields (nested messages) are stored using `godot::Ref<T>`. This ensures that the Godot RefCounted system correctly manages the lifecycle of nested resources, preventing dangling pointers and memory leaks.
 
 ## Development Workflow
@@ -64,3 +64,4 @@ Every Protobuf message is wrapped in a class inheriting from `godot::Resource`.
 ## Future Improvements
 -   **Nested Enums**: Currently top-level enums work best. Nested enums map to `int` but don't generate C++ enum definitions in the wrapper namespace.
 -   **Platform Support**: The Go code supports detecting platforms, but the `Makefile` in `buildenv` primarily targets Linux (`x64-linux`). Windows/macOS targets need to be fully fleshed out in the embedded Makefile.
+-   **Map Values (Structs)**: Support for `map<Key, Message>` with Nanopb needs verification for complex nested types.

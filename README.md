@@ -22,7 +22,7 @@
 
 ### Build `gdbuf`
 ```bash
-git clone https://github.com/LJ-Software/gdbuf.git
+git clone --recursive https://github.com/LJ-Software/gdbuf.git
 cd gdbuf
 make build
 # The binary will be in bin/gdbuf
