@@ -7,7 +7,7 @@ build:
 test-full: test-clean test-build
 	mkdir -p test/out
 	mkdir -p test/genout
-	go run main.go --proto test/proto --genout test/genout --out test/out
+	go run main.go --proto test/proto --include . --genout test/genout --out test/out
 
 .PHONY: test-clean
 test-clean:

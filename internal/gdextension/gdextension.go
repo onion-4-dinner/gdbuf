@@ -3,6 +3,7 @@ package gdextension
 import (
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -37,11 +38,11 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) er
 		return fmt.Errorf("could not make build directory: %w", err)
 	}
 
-	if err = os.CopyFS(buildDir, buildEnv); err != nil {
+	if err = copyFS(buildEnv, buildDir); err != nil {
 		return fmt.Errorf("could not copy build environment to temp directory: %w", err)
 	}
 
-	if err = os.CopyFS(buildDir, os.DirFS(generatedCppSourceDir)); err != nil {
+	if err = copyFS(os.DirFS(generatedCppSourceDir), buildDir); err != nil {
 		return fmt.Errorf("could not copy custom build files to temp directory: %w", err)
 	}
 
@@ -71,7 +72,7 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) er
 	}
 	gde.logger.Info("build successful")
 
-	if err = os.CopyFS(filepath.Join(buildDir, "out", "dist"), os.DirFS(filepath.Join(buildDir, "build", "bin"))); err != nil {
+	if err = copyFS(os.DirFS(filepath.Join(buildDir, "build", "bin")), filepath.Join(buildDir, "out", "dist")); err != nil {
 		return fmt.Errorf("could not copy build output to output directory: %w", err)
 	}
 
@@ -79,7 +80,7 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) er
 		return fmt.Errorf("could not create output directory: %w", err)
 	}
 
-	if err = os.CopyFS(outputDir, os.DirFS(filepath.Join(buildDir, "out"))); err != nil {
+	if err = copyFS(os.DirFS(filepath.Join(buildDir, "out")), outputDir); err != nil {
 		return fmt.Errorf("could not copy build output to output directory: %w", err)
 	}
 
@@ -90,10 +91,37 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string) er
 		if err := os.MkdirAll(docsDest, 0755); err != nil {
 			return fmt.Errorf("could not create docs directory: %w", err)
 		}
-		if err := os.CopyFS(docsDest, os.DirFS(docsSrc)); err != nil {
+		if err := copyFS(os.DirFS(docsSrc), docsDest); err != nil {
 			return fmt.Errorf("could not copy doc files: %w", err)
 		}
 	}
 
 	return nil
+}
+
+func copyFS(src fs.FS, dst string) error {
+	return fs.WalkDir(src, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		dstPath := filepath.Join(dst, path)
+		if d.IsDir() {
+			return os.MkdirAll(dstPath, 0755)
+		}
+
+		srcFile, err := src.Open(path)
+		if err != nil {
+			return err
+		}
+		defer srcFile.Close()
+
+		dstFile, err := os.Create(dstPath)
+		if err != nil {
+			return err
+		}
+		defer dstFile.Close()
+
+		_, err = io.Copy(dstFile, srcFile)
+		return err
+	})
 }

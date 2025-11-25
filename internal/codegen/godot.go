@@ -89,6 +89,9 @@ func resolveGodotType(field *descriptorpb.FieldDescriptorProto, currentProtoPath
 			case "BoolValue":
 				godotType = "bool"
 				godotClassName = "bool"
+			case "FieldMask":
+				godotType = "godot::PackedStringArray"
+				godotClassName = "PackedStringArray"
 			default:
 				isCustom = true
 				godotType = fmt.Sprintf("google::protobuf::%s", shortName)

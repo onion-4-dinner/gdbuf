@@ -7,6 +7,7 @@
 #include "{{ $protoFileNameNoExtension }}.pb.h"
 #include <cstdint> // Required for int64_t
 #include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/packed_string_array.hpp>
 #include "messages.h" // Include the shared utils
 {{- range .Dependencies }}
 #include "{{ . }}"
@@ -22,11 +23,22 @@ void {{ $className }}::_bind_methods() {
   godot::ClassDB::bind_method(godot::D_METHOD("get_proto_file_name"), &{{ $className }}::get_proto_file_name);
   godot::ClassDB::bind_method(godot::D_METHOD("to_byte_array"), &{{ $className }}::to_byte_array);
   godot::ClassDB::bind_method(godot::D_METHOD("from_byte_array", "PackedByteArray"), &{{ $className }}::from_byte_array);
+
+  {{- range .Oneofs }}
+  godot::ClassDB::bind_method(godot::D_METHOD("get_{{ snakecase .Name }}_case"), &{{ $className }}::get_{{ snakecase .Name }}_case);
+  {{- range .Fields }}
+  BIND_ENUM_CONSTANT(k{{ toPascalCase .FieldName }});
+  {{- end }}
+  BIND_ENUM_CONSTANT({{ toUpper (snakecase .Name) }}_NOT_SET);
+  {{- end }}
+
   {{- range .Fields }}
   godot::ClassDB::bind_method(godot::D_METHOD("get_{{ snakecase .FieldName }}"), &{{ $className }}::get_{{ snakecase .FieldName }});
   godot::ClassDB::bind_method(godot::D_METHOD("set_{{ snakecase .FieldName }}", "value"), &{{ $className }}::set_{{ snakecase .FieldName }});
   godot::ClassDB::add_property("{{ $className }}", godot::PropertyInfo({{ godotVariantType .GodotType .IsCustomType .IsEnum }}, "{{ snakecase .FieldName }}"
-      {{- if .IsCustomType }}, godot::PROPERTY_HINT_RESOURCE_TYPE, "{{ .GodotClassName }}"{{- end }}
+      {{- if .IsCustomType }}, godot::PROPERTY_HINT_RESOURCE_TYPE, "{{ .GodotClassName }}"
+      {{- else if .IsRepeated }}, godot::PROPERTY_HINT_TYPE_STRING, "{{ .GodotClassName }}:{{ .InnerGodotClassName }}"
+      {{- end }}
       ), "set_{{ snakecase .FieldName }}", "get_{{ snakecase .FieldName }}");
   {{- end }}
 }
@@ -35,8 +47,31 @@ godot::String {{ $className }}::get_proto_file_name() {
   return godot::String("{{ $protoFileNameNoExtension }}");
 }
 
+godot::String {{ $className }}::_to_string() const {
+    {{- $cppNamespace := replace "." "::" $packageName }}
+    {{ if $cppNamespace }}::{{ $cppNamespace }}::{{ else }}::{{ end }}{{ .MessageName }} proto_msg;
+    godot::PackedByteArray bytes = this->to_byte_array();
+    if (proto_msg.ParseFromArray(bytes.ptr(), bytes.size())) {
+        godot::String result;
+        // Append Oneof Case Information
+        {{- range .Oneofs }}
+        result += "{{ .Name }} case: ";
+        switch (this->{{ snakecase .Name }}_case) {
+            case {{ toUpper (snakecase .Name) }}_NOT_SET: result += "NOT_SET"; break;
+            {{- range .Fields }}
+            case k{{ toPascalCase .FieldName }}: result += "k{{ toPascalCase .FieldName }}"; break;
+            {{- end }}
+        }
+        result += "\n";
+        {{- end }}
+        result += godot::String(proto_msg.DebugString().c_str());
+        return result;
+    }
+    return godot::String("{{ $className }} <failed to serialize>");
+}
+
 // Serialize
-godot::PackedByteArray {{ $className }}::to_byte_array() {
+godot::PackedByteArray {{ $className }}::to_byte_array() const {
     {{- $cppNamespace := replace "." "::" $packageName }}
     {{ if $cppNamespace }}::{{ $cppNamespace }}::{{ else }}::{{ end }}{{ .MessageName }} proto_msg; 
 
@@ -107,6 +142,10 @@ godot::PackedByteArray {{ $className }}::to_byte_array() {
     // TODO: Implement Any serialization
     {{- else if eq .ProtoTypeName ".google.protobuf.Empty" }}
     // Empty: no-op
+    {{- else if eq .ProtoTypeName ".google.protobuf.FieldMask" }}
+    for (int i = 0; i < this->{{ snakecase .FieldName }}.size(); i++) {
+        proto_msg.mutable_{{ .FieldName }}()->add_paths(((godot::String)this->{{ snakecase .FieldName }}[i]).utf8().get_data());
+    }
     
     // --- Handling WKTs ---
     {{- else if eq .GodotType "godot::Dictionary" }} 
@@ -158,6 +197,23 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
         return;
     }
 
+    // Clear Oneof fields first to avoid lingering pointers
+    {{- range .Oneofs }}
+    {{- range .Fields }}
+    // Clear {{ .FieldName }} ({{ .GodotType }})
+      {{- if .IsCustomType }}
+    this->{{ snakecase .FieldName }} = nullptr;
+      {{- else if eq .GodotType "godot::String" }}
+    this->{{ snakecase .FieldName }} = "";
+      {{- else if eq .GodotType "godot::PackedByteArray" }}
+    this->{{ snakecase .FieldName }} = godot::PackedByteArray();
+      {{- else }}
+    this->{{ snakecase .FieldName }} = static_cast<{{ .GodotType }}>(0);
+      {{- end }}
+    {{- end }}
+    this->{{ snakecase .Name }}_case = {{ toUpper (snakecase .Name) }}_NOT_SET;
+    {{- end }}
+    
     {{- range .Fields }}
     {{- if .IsRepeated }}
     // --- Repeated Field ---
@@ -232,6 +288,13 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
     // TODO: Implement Any deserialization
     {{- else if eq .ProtoTypeName ".google.protobuf.Empty" }}
     // Empty: no-op
+    {{- else if eq .ProtoTypeName ".google.protobuf.FieldMask" }}
+    if (proto_msg.has_{{ .FieldName }}()) {
+        this->{{ snakecase .FieldName }}.resize(proto_msg.{{ .FieldName }}().paths_size());
+        for (int i = 0; i < proto_msg.{{ .FieldName }}().paths_size(); i++) {
+            this->{{ snakecase .FieldName }}.set(i, godot::String(proto_msg.{{ .FieldName }}().paths(i).c_str()));
+        }
+    }
     
     // --- Standard Handling ---
     {{- else if eq .GodotType "godot::Dictionary" }}
@@ -281,13 +344,54 @@ void {{ $className }}::from_byte_array(const godot::PackedByteArray &p_bytes) {
     {{- end }} // End Fields Loop
 }
 
+{{- range .Oneofs }}
+{{ $className }}::{{ toPascalCase .Name }}Case {{ $className }}::get_{{ snakecase .Name }}_case() const {
+    return this->{{ snakecase .Name }}_case;
+}
+{{- end }}
+
 {{- range .Fields }}
+  {{- $currentField := . }}
   {{- if .IsCustomType }}
 {{ .GodotType }}* {{ $className }}::get_{{ snakecase .FieldName }}() {
   return {{ snakecase .FieldName }};
 }
 
 void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }}* p_{{ snakecase .FieldName }}) {
+  {{- if .OneofName }}
+  {{- $oneofName := .OneofName }}
+  if (p_{{ snakecase .FieldName }} != nullptr) {
+      // Clear other fields in {{ $oneofName }}
+      {{- range $msgIndex, $msg := $.Messages }}
+      {{- if eq $msg.ClassName $className }}
+      {{- range $oneofIndex, $oneof := $msg.Oneofs }}
+      {{- if eq $oneof.Name $oneofName }}
+      {{- range $fieldIndex, $field := $oneof.Fields }}
+      {{- if ne $field.FieldName $currentField.FieldName }}
+      // Clear {{ $field.FieldName }} ({{ $field.GodotType }})
+        {{- if $field.IsCustomType }}
+      this->{{ snakecase $field.FieldName }} = nullptr;
+        {{- else if eq $field.GodotType "godot::String" }}
+      this->{{ snakecase $field.FieldName }} = "";
+        {{- else if eq $field.GodotType "godot::PackedByteArray" }}
+      this->{{ snakecase $field.FieldName }} = godot::PackedByteArray();
+        {{- else }}
+      this->{{ snakecase $field.FieldName }} = static_cast<{{ $field.GodotType }}>(0);
+        {{- end }}
+      {{- end }}
+      {{- end }}
+      this->{{ snakecase $oneof.Name }}_case = k{{ toPascalCase $currentField.FieldName }};
+      {{- end }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+  } else {
+    // Setting to null might clear the oneof if it was the active one
+    if (this->{{ snakecase .OneofName }}_case == k{{ toPascalCase .FieldName }}) {
+       this->{{ snakecase .OneofName }}_case = {{ toUpper (snakecase .OneofName) }}_NOT_SET;
+    }
+  }
+  {{- end }}
   this->{{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
 }
   {{- else }}
@@ -296,6 +400,33 @@ void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }}* p_{{ sna
 }
 
 void {{ $className }}::set_{{ snakecase .FieldName }}({{ .GodotType }} p_{{ snakecase .FieldName }}) {
+    {{- if .OneofName }}
+    {{- $oneofName := .OneofName }}
+    // Clear other fields in {{ $oneofName }}
+    {{- range $msgIndex, $msg := $.Messages }}
+    {{- if eq $msg.ClassName $className }}
+    {{- range $oneofIndex, $oneof := $msg.Oneofs }}
+    {{- if eq $oneof.Name $oneofName }}
+    {{- range $fieldIndex, $field := $oneof.Fields }}
+    {{- if ne $field.FieldName $currentField.FieldName }}
+    // Clear {{ $field.FieldName }} ({{ $field.GodotType }})
+      {{- if $field.IsCustomType }}
+    this->{{ snakecase $field.FieldName }} = nullptr;
+      {{- else if eq $field.GodotType "godot::String" }}
+    this->{{ snakecase $field.FieldName }} = "";
+      {{- else if eq $field.GodotType "godot::PackedByteArray" }}
+    this->{{ snakecase $field.FieldName }} = godot::PackedByteArray();
+      {{- else }}
+    this->{{ snakecase $field.FieldName }} = static_cast<{{ $field.GodotType }}>(0);
+      {{- end }}
+    {{- end }}
+    {{- end }}
+    this->{{ snakecase $oneof.Name }}_case = k{{ toPascalCase $currentField.FieldName }};
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
   this->{{ snakecase .FieldName }} = p_{{ snakecase .FieldName }};
 }
   {{- end }}

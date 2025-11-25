@@ -35,12 +35,15 @@ Run `gdbuf` pointing to your Protobuf definitions directory. It will handle pars
 ```bash
 ./bin/gdbuf \
   --proto ./path/to/your/protos \
+  --include ./path/to/your/protos/public \
+  --include ./path/to/your/protos/private \
   --out ./path/to/godot_project/addons/my_proto_extension \
   --name MyProtoLib
 ```
 
 ### Arguments
 - `--proto`: Path to the directory containing your `.proto` files (Required).
+- `--include`: Additional directories to include for resolving imports. Can be specified multiple times.
 - `--out`: Directory where the compiled GDExtension (library + `.gdextension` file) will be placed (Default: `./out`).
 - `--genout`: Directory where the intermediate C++ source code will be generated (Default: `.`).
 - `--name`: Name of the GDExtension library (Default: `gdbufgen`).

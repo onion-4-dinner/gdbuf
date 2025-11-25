@@ -1,0 +1,121 @@
+ --> 2025/11/24 20:18:13 Succesfully received 'initialized' notification
+ --> 2025/11/24 20:18:13 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:18:13 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:18:13 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.cpp.tmpl
+ --> 2025/11/24 20:18:13 
+===== list of affected files =====
+
+ --> 2025/11/24 20:18:33 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:18:33 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:18:33 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.cpp.tmpl
+ --> 2025/11/24 20:18:33 
+===== list of affected files =====
+
+ --> 2025/11/24 20:20:10 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:20:10 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:20:10 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.cpp.tmpl
+ --> 2025/11/24 20:20:10 
+===== list of affected files =====
+
+ --> 2025/11/24 20:20:56 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:20:56 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:20:56 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.h.tmpl
+ --> 2025/11/24 20:20:56 
+===== list of affected files =====
+
+ --> 2025/11/24 20:22:46 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:22:46 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:22:46 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.cpp.tmpl
+ --> 2025/11/24 20:22:46 
+===== list of affected files =====
+
+ --> 2025/11/24 20:23:28 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:23:28 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:23:28 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.cpp.tmpl
+ --> 2025/11/24 20:23:28 
+===== list of affected files =====
+
+ --> 2025/11/24 20:25:28 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:25:28 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:25:28 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.cpp.tmpl
+ --> 2025/11/24 20:25:28 
+===== list of affected files =====
+
+ --> 2025/11/24 20:27:18 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:27:18 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:27:18 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.h.tmpl
+ --> 2025/11/24 20:27:18 
+===== list of affected files =====
+
+ --> 2025/11/24 20:27:56 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:27:56 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:27:56 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.h.tmpl
+ --> 2025/11/24 20:27:56 
+===== list of affected files =====
+
+ --> 2025/11/24 20:30:09 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:30:09 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:30:09 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.h.tmpl
+ --> 2025/11/24 20:30:09 
+===== list of affected files =====
+
+ --> 2025/11/24 20:31:09 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:31:09 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:31:09 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.h.tmpl
+ --> 2025/11/24 20:31:09 
+===== list of affected files =====
+
+ --> 2025/11/24 20:33:09 ==> lsp before compute:
+ size all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:33:09 ==> lsp before 1:
+ size errors all files opened = 0
+ size 'textFromClient' = 1
+ --> 2025/11/24 20:33:09 oups ... this file is not considerated part of the project ::: file = file:///home/logan/Development/games/gdbuf/internal/codegen/templates/src/gen_per_proto_file/resource.cpp.tmpl
+ --> 2025/11/24 20:33:09 
+===== list of affected files =====
+

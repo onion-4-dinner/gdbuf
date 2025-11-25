@@ -31,10 +31,24 @@ class {{ .ClassName }};
 class {{ $className }} : public godot::Resource {
   GDCLASS({{ $className }}, godot::Resource)
 
+  public:
+    {{- range .Oneofs }}
+    enum {{ toPascalCase .Name }}Case {
+        {{ toUpper (snakecase .Name) }}_NOT_SET = 0,
+        {{- range .Fields }}
+        k{{ toPascalCase .FieldName }} = {{ .Number }},
+        {{- end }}
+    };
+    {{- end }}
+
   protected:
     static void _bind_methods();
 
   private:
+    {{- range .Oneofs }}
+    {{ toPascalCase .Name }}Case {{ snakecase .Name }}_case = {{ toUpper (snakecase .Name) }}_NOT_SET;
+    {{- end }}
+
     {{- range .Fields }}
       {{- if .IsCustomType }}
     {{ .GodotType }}* {{ snakecase .FieldName }}{};
@@ -48,8 +62,13 @@ class {{ $className }} : public godot::Resource {
     ~{{ $className }}() override = default;
     godot::String get_proto_file_name();
 
-    godot::PackedByteArray to_byte_array();
+    godot::PackedByteArray to_byte_array() const;
     void from_byte_array(const godot::PackedByteArray &p_bytes);
+    godot::String _to_string() const;
+
+    {{- range .Oneofs }}
+    {{ toPascalCase .Name }}Case get_{{ snakecase .Name }}_case() const;
+    {{- end }}
 
     {{- range .Fields }}
       {{- if .IsCustomType }}
@@ -64,3 +83,10 @@ class {{ $className }} : public godot::Resource {
 {{- end }}
 }
 }
+
+{{- range .Messages }}
+{{- $className := .ClassName }}
+{{- range .Oneofs }}
+VARIANT_ENUM_CAST(gdbuf::{{ snakecase $protoFileNameNoExtension }}::{{ $className }}::{{ toPascalCase .Name }}Case);
+{{- end }}
+{{- end }}

@@ -65,6 +65,17 @@ type protoMessage struct {
 	MessageName string
 	Description string
 	Fields      []protoMessageField
+	Oneofs      []protoOneof
+}
+
+type protoOneof struct {
+	Name   string
+	Fields []protoMessageField
+}
+
+type protoOneofField struct {
+	Name   string
+	Number int32
 }
 
 type protoEnum struct {
@@ -73,20 +84,23 @@ type protoEnum struct {
 }
 
 type protoMessageField struct {
-	FieldName         string
-	ProtoTypeName     string
-	GodotType         string
-	GodotClassName    string
-	InnerGodotType    string
-	IsCustomType      bool
-	IsInnerCustomType bool
-	IsRepeated        bool
-	IsEnum            bool
-	IsMap             bool
-	MapKeyGodotType   string
-	MapValueGodotType string
-	MapValueIsCustom  bool
-	Description       string
+	FieldName           string
+	ProtoTypeName       string
+	GodotType           string
+	GodotClassName      string
+	InnerGodotType      string
+	InnerGodotClassName string
+	IsCustomType        bool
+	IsInnerCustomType   bool
+	IsRepeated          bool
+	IsEnum              bool
+	IsMap               bool
+	MapKeyGodotType     string
+	MapValueGodotType   string
+	MapValueIsCustom    bool
+	Description         string
+	OneofName           string
+	Number              int32
 }
 
 func NewCodeGenerator(logger *slog.Logger, destinationDirectoryPath, extensionName, protobufVersion string) (*CodeGenerator, error) {
@@ -112,6 +126,8 @@ func NewCodeGenerator(logger *slog.Logger, destinationDirectoryPath, extensionNa
 
 func getTemplateFuncMap() template.FuncMap {
 	f := sprig.FuncMap()
+	f["toPascalCase"] = toPascalCase
+	f["toUpper"] = strings.ToUpper
 	f["godotVariantType"] = func(godotType string, isCustom bool, isEnum bool) string {
 		if isEnum {
 			return "godot::Variant::INT"
@@ -130,6 +146,8 @@ func getTemplateFuncMap() template.FuncMap {
 			return "godot::Variant::STRING"
 		case "godot::PackedByteArray":
 			return "godot::Variant::PACKED_BYTE_ARRAY"
+		case "godot::PackedStringArray":
+			return "godot::Variant::PACKED_STRING_ARRAY"
 		case "godot::Dictionary":
 			return "godot::Variant::DICTIONARY"
 		case "godot::Array":
@@ -157,6 +175,8 @@ func getTemplateFuncMap() template.FuncMap {
 			return "String"
 		case "godot::PackedByteArray":
 			return "PackedByteArray"
+		case "godot::PackedStringArray":
+			return "PackedStringArray"
 		case "godot::Dictionary":
 			return "Dictionary"
 		case "godot::Array":
@@ -318,12 +338,37 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 				currentPath := append(slices.Clone(path), int32(msgIndex))
 				protoMessage.Description = getComments(file.GetSourceCodeInfo(), currentPath)
 
+				// Process Oneofs
+				oneofDecls := msg.GetOneofDecl()
+				for i, oneof := range oneofDecls {
+					protoMessage.Oneofs = append(protoMessage.Oneofs, protoOneof{
+						Name: oneof.GetName(),
+					})
+					// Note: We will populate Fields later as we iterate fields
+					// Actually, we might want to verify if it's synthetic.
+					// But proto3 optional uses oneofs too.
+					// We can check if any field in this oneof is optional.
+					// Ideally we just map them.
+					_ = i
+				}
+
 				for fieldIndex, field := range msg.GetField() {
 					var protoMessageField protoMessageField
 					protoMessageField.FieldName = field.GetName()
 					protoMessageField.ProtoTypeName = field.GetTypeName()
+					protoMessageField.Number = field.GetNumber()
 					fieldPath := append(slices.Clone(currentPath), 2, int32(fieldIndex))
 					protoMessageField.Description = getComments(file.GetSourceCodeInfo(), fieldPath)
+
+					if field.OneofIndex != nil {
+						// Check if it is NOT a synthetic proto3 optional
+						if !field.GetProto3Optional() {
+							oneofIdx := field.GetOneofIndex()
+							if int(oneofIdx) < len(protoMessage.Oneofs) {
+								protoMessageField.OneofName = protoMessage.Oneofs[oneofIdx].Name
+							}
+						}
+					}
 
 					// Add default descriptions for WKTs
 					if protoMessageField.ProtoTypeName == ".google.protobuf.Timestamp" {
@@ -377,6 +422,7 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 					protoMessageField.IsEnum = isEnum
 
 					protoMessageField.InnerGodotType = godotType
+					protoMessageField.InnerGodotClassName = godotClassName
 					protoMessageField.IsInnerCustomType = protoMessageField.IsCustomType
 
 					if desc, ok := allMessageDescriptors[field.GetTypeName()]; ok && desc.GetOptions().GetMapEntry() {
@@ -419,6 +465,13 @@ func (cg *CodeGenerator) extractProtoData(fileDescriptorSet []*descriptorpb.File
 							protoMessageField.GodotClassName = "Array"
 							protoMessageField.IsCustomType = false
 							cg.logger.Debug("Repeated field", "name", field.GetName(), "after", protoMessageField.IsCustomType)
+						}
+					}
+
+					if field.OneofIndex != nil && !field.GetProto3Optional() {
+						oneofIdx := field.GetOneofIndex()
+						if int(oneofIdx) < len(protoMessage.Oneofs) {
+							protoMessage.Oneofs[oneofIdx].Fields = append(protoMessage.Oneofs[oneofIdx].Fields, protoMessageField)
 						}
 					}
 

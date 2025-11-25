@@ -36,7 +36,7 @@ func (c *ProtoCompiler) GetVersion() string {
 	return c.protobufVersion
 }
 
-func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descriptorpb.FileDescriptorProto, error) {
+func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string, includeDirs []string) ([]*descriptorpb.FileDescriptorProto, error) {
 	var descriptorSet []*descriptorpb.FileDescriptorProto
 
 	protoFilePaths, err := getProtoFilesInDir(protoFilesDirPath)
@@ -48,7 +48,16 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descrip
 	protoDescriptorPath := filepath.Join(tmpDir, "gdbuf.desc.binpb")
 	args := []string{fmt.Sprintf("--descriptor_set_out=%s", protoDescriptorPath)}
 	args = append(args, "--include_source_info")
-	args = append(args, "-I", ".") // Include current dir as the include root
+
+	if len(includeDirs) > 0 {
+		for _, dir := range includeDirs {
+			args = append(args, "-I", dir)
+		}
+	} else {
+		args = append(args, "-I", protoFilesDirPath)
+		args = append(args, "-I", ".") // Include current dir as the include root
+	}
+
 	// Actually, well-known types might be needed. protoc usually finds them if installed.
 	args = append(args, protoFilePaths...)
 	buildProtoDescriptorCmd := exec.Command("protoc", args...)
@@ -75,7 +84,7 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string) ([]*descrip
 	return protoFileDescriptorSet.GetFile(), nil
 }
 
-func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
+func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string, includeDirs []string) (string, error) {
 	tempProtocBuildDir, err := os.MkdirTemp("", "gdbuf-build-")
 	if err != nil {
 		return "", fmt.Errorf("could not make temp directory for proto cpp build: %w", err)
@@ -86,7 +95,16 @@ func (c *ProtoCompiler) CompileCpp(protoFilesDirPath string) (string, error) {
 		return "", fmt.Errorf("could not get proto files from %s: %w", protoFilesDirPath, err)
 	}
 	args := []string{fmt.Sprintf("--cpp_out=%s", tempProtocBuildDir)}
-	args = append(args, "-I", ".")
+
+	if len(includeDirs) > 0 {
+		for _, dir := range includeDirs {
+			args = append(args, "-I", dir)
+		}
+	} else {
+		args = append(args, "-I", protoFilesDirPath)
+		args = append(args, "-I", ".")
+	}
+
 	args = append(args, protoFilePaths...)
 	compileCppCmd := exec.Command("protoc", args...)
 

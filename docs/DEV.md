@@ -5,7 +5,7 @@
 ## Architecture Overview
 
 The program operates in a linear pipeline:
-1.  **Input Parsing**: Accepts a directory of `.proto` files.
+1.  **Input Parsing**: Accepts a directory of `.proto` files and optional include directories for import resolution.
 2.  **Protoc Compilation**: Uses `protoc` to generate standard C++ headers/sources and a binary descriptor set (`.desc.binpb`).
 3.  **Code Generation**: Parses the descriptor set to understand the message structure, then executes Go `text/template` templates to generate Godot-specific C++ wrappers.
 4.  **GDExtension Compilation**: Orchestrates a CMake build to compile the generated wrappers + standard Protobuf C++ code into a shared library (`.so`, `.dll`, `.dylib`).
