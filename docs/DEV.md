@@ -57,9 +57,10 @@ Every Protobuf message is wrapped in a class inheriting from `godot::Resource`.
 2.  **Rebuild Tool**: Run `make build` to update `bin/gdbuf`.
 3.  **Test**: Run `make test-full`. This:
     -   Cleans previous outputs.
-    -   Runs `gdbuf` on `test/proto`.
+    -   Runs `gdbuf` on `test/proto` (`test-build-extension`).
     -   Compiles the resulting GDExtension.
-    -   *Note*: This is an integration test. If it passes, the C++ code is valid.
+    -   Runs a headless Godot instance to execute GDScript tests (`test-godot`).
+    -   *Note*: This is a full integration test. If it passes, the C++ code is valid and the extension works in Godot.
 
 ## Future Improvements
 -   **Nested Enums**: Currently top-level enums work best. Nested enums map to `int` but don't generate C++ enum definitions in the wrapper namespace.

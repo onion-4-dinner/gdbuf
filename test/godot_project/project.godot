@@ -1,0 +1,8 @@
+[application]
+
+config/name="gdbuf_test"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[dotnet]
+
+project/assembly_name="gdbuf_test"

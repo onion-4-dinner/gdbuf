@@ -42,7 +42,7 @@ void {{ $className }}::_bind_methods() {
   godot::ClassDB::bind_method(godot::D_METHOD("set_{{ snakecase .FieldName }}", "value"), &{{ $className }}::set_{{ snakecase .FieldName }});
   godot::ClassDB::add_property("{{ $className }}", godot::PropertyInfo({{ godotVariantType .GodotType .IsCustomType .IsEnum }}, "{{ snakecase .FieldName }}"
       {{- if .IsCustomType }}, godot::PROPERTY_HINT_RESOURCE_TYPE, "{{ .GodotClassName }}"
-      {{- else if .IsRepeated }}, godot::PROPERTY_HINT_TYPE_STRING, "{{ .GodotClassName }}:{{ .InnerGodotClassName }}"
+      {{- else if .IsRepeated }}, godot::PROPERTY_HINT_NONE, ""
       {{- end }}
       ), "set_{{ snakecase .FieldName }}", "get_{{ snakecase .FieldName }}");
   {{- end }}
