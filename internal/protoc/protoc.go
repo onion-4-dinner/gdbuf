@@ -55,8 +55,8 @@ func (c *ProtoCompiler) BuildDescriptorSet(protoFilesDirPath string, includeDirs
 			args = append(args, "-I", dir)
 		}
 	} else {
-		args = append(args, "-I", protoFilesDirPath)
 		args = append(args, "-I", ".") // Include current dir as the include root
+		args = append(args, "-I", protoFilesDirPath)
 	}
 
 	// Actually, well-known types might be needed. protoc usually finds them if installed.
@@ -117,8 +117,8 @@ func (c *ProtoCompiler) CompileNanopb(protoFilesDirPath string, includeDirs []st
 			args = append(args, "-I", dir)
 		}
 	} else {
-		args = append(args, "-I", protoFilesDirPath)
 		args = append(args, "-I", ".")
+		args = append(args, "-I", protoFilesDirPath)
 	}
 
 	args = append(args, protoFilePaths...)

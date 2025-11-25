@@ -8,6 +8,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "test/proto/dependency.proto";
+import "test/proto/nested/deeply/nested.proto";
 
 enum BasicTestEnum {
   BASIC_TEST_ENUM_UNSPECIFIED = 0;
@@ -62,6 +63,7 @@ message GoogleWellKnownTypesMessage {
 message MapMessage {
   map<string, int32> string_int_map = 1;
   map<int32, BasicTestMessage> int_msg_map = 2;
+  map<string, string> string_string_map = 3;
 }
 
 message OuterNestedMessage {
@@ -99,4 +101,5 @@ message EverythingMessage {
   dependency.DependencyMessage dependency_message = 8;
   RepeatedComplexMessage repeated_complex = 9;
   RecursiveMessage recursive = 10;
+  nested.deeply.DeeplyNestedMessage deeply_nested = 11;
 }
