@@ -11,7 +11,7 @@ build-windows:
 
 .PHONY: build-web
 build-web:
-	cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/web-wasm32.toolchain.cmake -DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single
+	cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/web-wasm32.toolchain.cmake -DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single -DGODOTCPP_THREADS=OFF
 	cmake --build build
 
 .PHONY: build-android

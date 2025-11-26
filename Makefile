@@ -9,10 +9,18 @@ test-build-extension: test-clean test-build
 	mkdir -p test/genout
 	go run main.go --proto test/proto --include . --genout test/genout --out test/out
 
+.PHONY: test-web
+test-web: test-clean test-build
+	mkdir -p test/out-web
+	mkdir -p test/genout-web
+	go run main.go --proto test/proto --include . --genout test/genout-web --out test/out-web --platform web
+
 .PHONY: test-clean
 test-clean:
 	rm -rf test/out
 	rm -rf test/genout
+	rm -rf test/out-web
+	rm -rf test/genout-web
 	rm -rf test/out-hyphen
 	rm -rf test/genout-hyphen
 	rm -rf test/godot_project/addons/gdbufgen

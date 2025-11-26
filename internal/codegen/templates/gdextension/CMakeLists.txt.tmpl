@@ -1,6 +1,17 @@
 # Project metadata
 cmake_minimum_required(VERSION 3.16)
+
 project({{ .GDExtensionName }} VERSION 1.0 LANGUAGES CXX C)
+
+# Emscripten hack for shared libraries (must be before add_library shared)
+if(EMSCRIPTEN)
+    set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+    set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-sSIDE_MODULE")
+    set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "-sSIDE_MODULE")
+    set(CMAKE_STRIP FALSE)
+    set(CMAKE_SHARED_LIBRARY_SUFFIX ".wasm")
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

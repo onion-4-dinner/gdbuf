@@ -20,6 +20,7 @@ var buildEnvFS embed.FS
 
 const (
 	androidNDKVersion = "r28b"
+	emscriptenVersion = "3.1.64"
 )
 
 var androidNDKURLs = map[string]string{
@@ -108,6 +109,7 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 	}
 
 	androidNDKHome := os.Getenv("ANDROID_NDK_HOME")
+	emsdkHome := os.Getenv("EMSDK")
 
 	if platform != "" {
 		switch platform {
@@ -117,6 +119,16 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 			buildTarget = "build-windows"
 		case "web":
 			buildTarget = "build-web"
+			if emsdkHome == "" {
+				gde.logger.Info("EMSDK not set, checking for managed Emscripten SDK")
+				managedEmsdkPath, err := gde.ensureEmscripten(userCacheDir)
+				if err != nil {
+					return fmt.Errorf("failed to setup Emscripten SDK: %w", err)
+				}
+				emsdkHome = managedEmsdkPath
+			} else {
+				gde.logger.Info("using existing EMSDK", "path", emsdkHome)
+			}
 		case "android":
 			buildTarget = "build-android"
 			// Ensure NDK is available
@@ -141,6 +153,14 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("WORKSPACE=%s", buildDir))
 	if androidNDKHome != "" {
 		buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("ANDROID_NDK_HOME=%s", androidNDKHome))
+	}
+	if emsdkHome != "" {
+		buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("EMSDK=%s", emsdkHome))
+		// Add emscripten to PATH
+		// The path structure is usually emsdk/upstream/emscripten
+		emscriptenBin := filepath.Join(emsdkHome, "upstream", "emscripten")
+		currentPath := os.Getenv("PATH")
+		buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("PATH=%s%c%s", emscriptenBin, os.PathListSeparator, currentPath))
 	}
 	buildCmd.Dir = buildDir
 	buildCmd.Stdout = os.Stdout
@@ -205,6 +225,62 @@ func (gde *GDExtensionBuilder) ensureAndroidNDK(cacheDir string) (string, error)
 	}
 
 	return ndkPath, nil
+}
+
+func (gde *GDExtensionBuilder) ensureEmscripten(cacheDir string) (string, error) {
+	emsdkDir := filepath.Join(cacheDir, "emsdk")
+
+	if _, err := os.Stat(emsdkDir); err != nil {
+		url := "https://github.com/emscripten-core/emsdk/archive/refs/heads/main.zip"
+		zipPath := filepath.Join(cacheDir, "emsdk.zip")
+		gde.logger.Info("downloading emsdk", "url", url, "dest", zipPath)
+
+		if err := downloadFile(url, zipPath); err != nil {
+			return "", fmt.Errorf("failed to download emsdk: %w", err)
+		}
+		defer os.Remove(zipPath)
+
+		gde.logger.Info("extracting emsdk", "src", zipPath, "dest", cacheDir)
+		if err := unzip(zipPath, cacheDir); err != nil {
+			return "", fmt.Errorf("failed to extract emsdk: %w", err)
+		}
+
+		// Rename emsdk-main to emsdk
+		if err := os.Rename(filepath.Join(cacheDir, "emsdk-main"), emsdkDir); err != nil {
+			return "", fmt.Errorf("failed to rename emsdk dir: %w", err)
+		}
+	}
+
+	gde.logger.Info("checking emsdk version", "version", emscriptenVersion)
+
+	emsdkBin := "./emsdk"
+	if runtime.GOOS == "windows" {
+		emsdkBin = "emsdk.bat"
+	}
+
+	// Check if already installed to avoid re-running install (which checks network)
+	// This is a heuristic: checks for upstream/emscripten directory
+	if _, err := os.Stat(filepath.Join(emsdkDir, "upstream", "emscripten")); err != nil {
+		gde.logger.Info("installing emsdk", "version", emscriptenVersion)
+		cmd := exec.Command(emsdkBin, "install", emscriptenVersion)
+		cmd.Dir = emsdkDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return "", fmt.Errorf("failed to install emsdk version %s: %w", emscriptenVersion, err)
+		}
+	}
+
+	gde.logger.Info("activating emsdk", "version", emscriptenVersion)
+	cmd := exec.Command(emsdkBin, "activate", emscriptenVersion)
+	cmd.Dir = emsdkDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to activate emsdk version %s: %w", emscriptenVersion, err)
+	}
+
+	return emsdkDir, nil
 }
 
 func downloadFile(url, filepath string) error {

@@ -61,8 +61,12 @@ Every Protobuf message is wrapped in a class inheriting from `godot::Resource`.
     -   Compiles the resulting GDExtension.
     -   Runs a headless Godot instance to execute GDScript tests (`test-godot`).
     -   *Note*: This is a full integration test. If it passes, the C++ code is valid and the extension works in Godot.
+    -   **Web Test**: Run `make test-web` to verify compilation for the Web platform (requires Python 3).
 
 ## Future Improvements
 -   **Nested Enums**: Currently top-level enums work best. Nested enums map to `int` but don't generate C++ enum definitions in the wrapper namespace.
--   **Platform Support**: The Go code supports detecting platforms, but the `Makefile` in `buildenv` primarily targets Linux (`x64-linux`). Windows/macOS targets need to be fully fleshed out in the embedded Makefile. Android builds are fully supported, with `gdbuf` automatically downloading and managing the Android NDK if `ANDROID_NDK_HOME` is not set.
+-   **Platform Support**: The Go code supports detecting platforms.
+    -   **Linux/Windows/macOS**: Supported via CMake toolchains.
+    -   **Android**: Fully supported. `gdbuf` automatically downloads and manages the Android NDK if `ANDROID_NDK_HOME` is not set.
+    -   **Web**: Fully supported. `gdbuf` automatically downloads and manages the Emscripten SDK (emsdk) if `EMSDK` is not set. Requires Python 3 to be installed on the host system.
 -   **Map Values (Structs)**: Support for `map<Key, Message>` with Nanopb needs verification for complex nested types.
