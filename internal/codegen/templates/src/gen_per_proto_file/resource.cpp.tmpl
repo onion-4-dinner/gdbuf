@@ -6,6 +6,7 @@
 #include "{{ $protoFileNameNoExtension }}.h"
 #include "{{ $protoFileNameNoExtension }}.pb.h"
 #include <cstdint> // Required for int64_t
+#include <type_traits> // Required for std::decay_t
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/packed_string_array.hpp>
 #include "messages.h" // Include the shared utils
@@ -134,7 +135,11 @@ godot::PackedByteArray {{ $className }}::to_byte_array() const {
             {{- else }}
             // Array of Primitives
             for (int i = 0; i < proto_msg.{{ .FieldName }}_count; i++) {
-                 proto_msg.{{ .FieldName }}[i] = (decltype(proto_msg.{{ .FieldName }}[i])){{ snakecase .FieldName }}_arr[i];
+                 {{- if .IsEnum }}
+                 proto_msg.{{ .FieldName }}[i] = (std::decay_t<decltype(proto_msg.{{ .FieldName }}[i])>)(int32_t){{ snakecase .FieldName }}_arr[i];
+                 {{- else }}
+                 proto_msg.{{ .FieldName }}[i] = (std::decay_t<decltype(proto_msg.{{ .FieldName }}[i])>){{ snakecase .FieldName }}_arr[i];
+                 {{- end }}
             }
             {{- end }}
         }
@@ -158,7 +163,7 @@ godot::PackedByteArray {{ $className }}::to_byte_array() const {
                 }
                 {{- else }}
                 proto_msg.{{ .FieldName }}[i].key = (decltype(proto_msg.{{ .FieldName }}[i].key))malloc(sizeof(*proto_msg.{{ .FieldName }}[i].key));
-                *proto_msg.{{ .FieldName }}[i].key = (decltype(*proto_msg.{{ .FieldName }}[i].key))key_var;
+                *proto_msg.{{ .FieldName }}[i].key = (std::decay_t<decltype(*proto_msg.{{ .FieldName }}[i].key)>)key_var;
                 {{- end }}
 
                 // Value
@@ -184,7 +189,7 @@ godot::PackedByteArray {{ $className }}::to_byte_array() const {
                 }
                 {{- else }}
                 proto_msg.{{ .FieldName }}[i].value = (decltype(proto_msg.{{ .FieldName }}[i].value))malloc(sizeof(*proto_msg.{{ .FieldName }}[i].value));
-                *proto_msg.{{ .FieldName }}[i].value = (decltype(*proto_msg.{{ .FieldName }}[i].value))val_var;
+                *proto_msg.{{ .FieldName }}[i].value = (std::decay_t<decltype(*proto_msg.{{ .FieldName }}[i].value)>)val_var;
                 {{- end }}
             }
         }
