@@ -11,8 +11,11 @@ test-build-extension: test-clean test-build
 
 .PHONY: test-clean
 test-clean:
-	rm -r test/out
-	rm -r test/genout
+	rm -rf test/out
+	rm -rf test/genout
+	rm -rf test/out-hyphen
+	rm -rf test/genout-hyphen
+	rm -rf test/godot_project/addons/gdbufgen
 
 .PHONY: test-build
 test-build: test/test.desc.binpb
