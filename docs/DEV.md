@@ -64,5 +64,5 @@ Every Protobuf message is wrapped in a class inheriting from `godot::Resource`.
 
 ## Future Improvements
 -   **Nested Enums**: Currently top-level enums work best. Nested enums map to `int` but don't generate C++ enum definitions in the wrapper namespace.
--   **Platform Support**: The Go code supports detecting platforms, but the `Makefile` in `buildenv` primarily targets Linux (`x64-linux`). Windows/macOS targets need to be fully fleshed out in the embedded Makefile.
+-   **Platform Support**: The Go code supports detecting platforms, but the `Makefile` in `buildenv` primarily targets Linux (`x64-linux`). Windows/macOS targets need to be fully fleshed out in the embedded Makefile. Android builds are fully supported, with `gdbuf` automatically downloading and managing the Android NDK if `ANDROID_NDK_HOME` is not set.
 -   **Map Values (Structs)**: Support for `map<Key, Message>` with Nanopb needs verification for complex nested types.
