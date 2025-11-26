@@ -121,10 +121,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = gdExtensionBuilder.Build(*cppOutputDirPtr, *extensionArtifactOutputDirPtr, *platformPtr, *generateOnlyPtr)
-	if err != nil {
-		logger.Error("problem building gdextension", "err", err)
-		os.Exit(1)
+	platforms := []string{*platformPtr}
+	if *platformPtr == "all" {
+		platforms = []string{"linux", "windows", "web", "android"}
+	} else if strings.Contains(*platformPtr, ",") {
+		platforms = strings.Split(*platformPtr, ",")
+	}
+
+	for _, platform := range platforms {
+		// Trim space just in case user did "linux, windows"
+		platform = strings.TrimSpace(platform)
+		if platform == "" && len(platforms) > 1 {
+			continue
+		}
+		logger.Info("building gdextension", "platform", platform)
+		err = gdExtensionBuilder.Build(*cppOutputDirPtr, *extensionArtifactOutputDirPtr, platform, *generateOnlyPtr)
+		if err != nil {
+			logger.Error("problem building gdextension", "platform", platform, "err", err)
+			os.Exit(1)
+		}
 	}
 }
 

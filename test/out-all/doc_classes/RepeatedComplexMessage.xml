@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="RepeatedComplexMessage" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+Proto description missing.
+	</brief_description>
+	<description>
+Proto description missing.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="messages" type="Array" setter="set_messages" getter="get_messages">Proto description missing.</member>
+		<member name="enums" type="int" setter="set_enums" getter="get_enums">Proto description missing.</member>
+	</members>
+</class>

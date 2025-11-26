@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="GoogleWellKnownTypesMessage" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+Proto description missing.
+	</brief_description>
+	<description>
+Proto description missing.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="any_field" type="Dictionary" setter="set_any_field" getter="get_any_field">Proto description missing.</member>
+		<member name="timestamp_field" type="int" setter="set_timestamp_field" getter="get_timestamp_field">Note: This field is a Google Protobuf Timestamp. In Godot, it is represented as an int64 (Unix timestamp in milliseconds).</member>
+		<member name="duration_field" type="float" setter="set_duration_field" getter="get_duration_field">Note: This field is a Google Protobuf Duration. In Godot, it is represented as a double (seconds).</member>
+		<member name="string_wrapper" type="String" setter="set_string_wrapper" getter="get_string_wrapper">Proto description missing.</member>
+		<member name="int32_wrapper" type="int" setter="set_int32_wrapper" getter="get_int32_wrapper">Proto description missing.</member>
+		<member name="struct_field" type="Dictionary" setter="set_struct_field" getter="get_struct_field">Note: This field is a Google Protobuf Struct. In Godot, it is represented as a Dictionary.</member>
+		<member name="empty_field" type="Variant" setter="set_empty_field" getter="get_empty_field">Proto description missing.</member>
+	</members>
+</class>

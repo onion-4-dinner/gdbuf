@@ -54,6 +54,7 @@ Run `gdbuf` pointing to your Protobuf definitions directory. It will handle pars
 - `--genout`: Directory where the intermediate C++ source code will be generated (Default: `.`).
 - `--generate-only`: Only generate the C++ source code, skipping the GDExtension compilation step (Default: `false`).
 - `--name`: Name of the GDExtension library (Default: `gdbufgen`).
+- `--platform`: Target platform(s) to build for. Can be a single platform (`linux`, `windows`, `web`, `android`), a comma-separated list (`linux,web`), or `all`. Default: Host OS.
 
 ## In Godot
 

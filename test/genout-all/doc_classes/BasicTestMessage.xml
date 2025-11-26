@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="BasicTestMessage" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+Proto description missing.
+	</brief_description>
+	<description>
+Proto description missing.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="double_field" type="float" setter="set_double_field" getter="get_double_field">Proto description missing.</member>
+		<member name="float_field" type="float" setter="set_float_field" getter="get_float_field">Proto description missing.</member>
+		<member name="int32_field" type="int" setter="set_int32_field" getter="get_int32_field">Proto description missing.</member>
+		<member name="int64_field" type="int" setter="set_int64_field" getter="get_int64_field">Proto description missing.</member>
+		<member name="uint32_field" type="int" setter="set_uint32_field" getter="get_uint32_field">Proto description missing.</member>
+		<member name="uint64_field" type="int" setter="set_uint64_field" getter="get_uint64_field">Proto description missing.</member>
+		<member name="sint32_field" type="int" setter="set_sint32_field" getter="get_sint32_field">Proto description missing.</member>
+		<member name="sint64_field" type="int" setter="set_sint64_field" getter="get_sint64_field">Proto description missing.</member>
+		<member name="fixed32_field" type="int" setter="set_fixed32_field" getter="get_fixed32_field">Proto description missing.</member>
+		<member name="fixed64_field" type="int" setter="set_fixed64_field" getter="get_fixed64_field">Proto description missing.</member>
+		<member name="sfixed32_field" type="int" setter="set_sfixed32_field" getter="get_sfixed32_field">Proto description missing.</member>
+		<member name="sfixed64_field" type="int" setter="set_sfixed64_field" getter="get_sfixed64_field">Proto description missing.</member>
+		<member name="bool_field" type="bool" setter="set_bool_field" getter="get_bool_field">Proto description missing.</member>
+		<member name="string_field" type="String" setter="set_string_field" getter="get_string_field">Proto description missing.</member>
+		<member name="bytes_field" type="PackedByteArray" setter="set_bytes_field" getter="get_bytes_field">Proto description missing.</member>
+	</members>
+</class>

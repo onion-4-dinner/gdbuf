@@ -96,14 +96,18 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 
 	// all files are in place, try to build
 	var buildTarget string
+	var buildSubdir string
 	// Default to host OS
 	switch runtime.GOOS {
 	case "linux":
 		buildTarget = "build-linux"
+		buildSubdir = "linux"
 	case "darwin":
 		buildTarget = "build-macos"
+		buildSubdir = "macos"
 	case "windows":
 		buildTarget = "build-windows"
+		buildSubdir = "windows"
 	default:
 		return fmt.Errorf("unsupported os: %s", runtime.GOOS)
 	}
@@ -115,10 +119,13 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 		switch platform {
 		case "linux":
 			buildTarget = "build-linux"
+			buildSubdir = "linux"
 		case "windows":
 			buildTarget = "build-windows"
+			buildSubdir = "windows"
 		case "web":
 			buildTarget = "build-web"
+			buildSubdir = "web"
 			if emsdkHome == "" {
 				gde.logger.Info("EMSDK not set, checking for managed Emscripten SDK")
 				managedEmsdkPath, err := gde.ensureEmscripten(userCacheDir)
@@ -131,6 +138,7 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 			}
 		case "android":
 			buildTarget = "build-android"
+			buildSubdir = "android"
 			// Ensure NDK is available
 			if androidNDKHome == "" {
 				gde.logger.Info("ANDROID_NDK_HOME not set, checking for managed NDK")
@@ -171,7 +179,7 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 	}
 	gde.logger.Info("build successful")
 
-	if err = copyFS(os.DirFS(filepath.Join(buildDir, "build", "bin")), filepath.Join(buildDir, "out", "dist")); err != nil {
+	if err = copyFS(os.DirFS(filepath.Join(buildDir, "build", buildSubdir, "bin")), filepath.Join(buildDir, "out", "dist")); err != nil {
 		return fmt.Errorf("could not copy build output to output directory: %w", err)
 	}
 

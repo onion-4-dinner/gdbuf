@@ -1,0 +1,73 @@
+[configuration]
+
+entry_symbol = "gdextension_init"
+compatibility_minimum = "4.5"
+
+documentation_files = [
+    "./doc_classes/gdbufgenEnums.xml",
+    "./doc_classes/DependencyMessage.xml",
+    "./doc_classes/DeeplyNestedMessage.xml",
+    "./doc_classes/BasicTestMessage.xml",
+    "./doc_classes/SpecialFieldTypesMessage.xml",
+    "./doc_classes/OneOfMessage.xml",
+    "./doc_classes/GoogleWellKnownTypesMessage.xml",
+    "./doc_classes/MapMessage.xml",
+    "./doc_classes/OuterNestedMessage.xml",
+    "./doc_classes/OuterNestedMessageInnerNestedMessage.xml",
+    "./doc_classes/RepeatedComplexMessage.xml",
+    "./doc_classes/RecursiveMessage.xml",
+    "./doc_classes/ReservedMessage.xml",
+    "./doc_classes/EverythingMessage.xml",
+]
+
+[libraries]
+; Relative paths ensure that our GDExtension can be placed anywhere in the project directory.
+macos.single.debug = "./dist/libgdbufgen.macos.template_debug.dylib"
+macos.double.debug = "./dist/libgdbufgen.macos.template_debug.double.dylib"
+macos.single.release = "./dist/libgdbufgen.macos.template_release.dylib"
+macos.double.release = "./dist/libgdbufgen.macos.template_debug.double.dylib"
+
+ios.arm64.single.debug = "./dist/libgdbufgen.ios.template_debug.arm64.dylib"
+ios.arm64.double.debug = "./dist/libgdbufgen.ios.template_debug.arm64.double.dylib"
+ios.arm64.single.release = "./dist/libgdbufgen.ios.template_release.arm64.dylib"
+ios.arm64.double.release = "./dist/libgdbufgen.ios.template_release.arm64.double.dylib"
+
+windows.x86_32.single.debug = "./dist/gdbufgen.windows.template_debug.x86_32.dll"
+windows.x86_32.double.debug = "./dist/gdbufgen.windows.template_debug.x86_32.double.dll"
+windows.x86_32.single.release = "./dist/gdbufgen.windows.template_release.x86_32.dll"
+windows.x86_32.double.release = "./dist/gdbufgen.windows.template_release.x86_32.double.dll"
+
+windows.x86_64.single.debug = "./dist/gdbufgen.windows.template_debug.x86_64.dll"
+windows.x86_64.double.debug = "./dist/gdbufgen.windows.template_debug.x86_64.double.dll"
+windows.x86_64.single.release = "./dist/gdbufgen.windows.template_release.x86_64.dll"
+windows.x86_64.double.release = "./dist/gdbufgen.windows.template_release.x86_64.double.dll"
+
+linux.x86_64.single.debug = "./dist/libgdbufgen.linux.template_debug.x86_64.so"
+linux.x86_64.double.debug = "./dist/libgdbufgen.linux.template_debug.x86_64.double.so"
+linux.x86_64.single.release = "./dist/libgdbufgen.linux.template_release.x86_64.so"
+linux.x86_64.double.release = "./dist/libgdbufgen.linux.template_release.x86_64.double.so"
+
+linux.arm64.single.debug = "./dist/libgdbufgen.linux.template_debug.arm64.so"
+linux.arm64.double.debug = "./dist/libgdbufgen.linux.template_debug.arm64.double.so"
+linux.arm64.single.release = "./dist/libgdbufgen.linux.template_release.arm64.so"
+linux.arm64.double.release = "./dist/libgdbufgen.linux.template_release.arm64.double.so"
+
+linux.rv64.single.debug = "./dist/libgdbufgen.linux.template_debug.rv64.so"
+linux.rv64.double.debug = "./dist/libgdbufgen.linux.template_debug.rv64.double.so"
+linux.rv64.single.release = "./dist/libgdbufgen.linux.template_release.rv64.so"
+linux.rv64.double.release = "./dist/libgdbufgen.linux.template_release.rv64.double.so"
+
+android.x86_64.single.debug = "./dist/libgdbufgen.android.template_debug.x86_64.so"
+android.x86_64.double.debug = "./dist/libgdbufgen.android.template_debug.x86_64.double.so"
+android.x86_64.single.release = "./dist/libgdbufgen.android.template_release.x86_64.so"
+android.x86_64.double.release = "./dist/libgdbufgen.android.template_release.x86_64.double.so"
+
+android.arm64.single.debug = "./dist/libgdbufgen.android.template_debug.arm64.so"
+android.arm64.double.debug = "./dist/libgdbufgen.android.template_debug.arm64.double.so"
+android.arm64.single.release = "./dist/libgdbufgen.android.template_release.arm64.so"
+android.arm64.double.release = "./dist/libgdbufgen.android.template_release.arm64.double.so"
+
+web.wasm32.single.debug = "./dist/libgdbufgen.web.template_debug.wasm32.nothreads.wasm"
+web.wasm32.double.debug = "./dist/libgdbufgen.web.template_release.wasm32.double.nothreads.wasm"
+web.wasm32.single.release = "./dist/libgdbufgen.web.template_release.wasm32.nothreads.wasm"
+web.wasm32.double.release = "./dist/libgdbufgen.web.template_release.wasm32.double.nothreads.wasm"

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="EverythingMessage" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+Proto description missing.
+	</brief_description>
+	<description>
+Proto description missing.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="basic_message" type="BasicTestMessage" setter="set_basic_message" getter="get_basic_message">Proto description missing.</member>
+		<member name="special_message" type="SpecialFieldTypesMessage" setter="set_special_message" getter="get_special_message">Proto description missing.</member>
+		<member name="map_message" type="MapMessage" setter="set_map_message" getter="get_map_message">Proto description missing.</member>
+		<member name="oneof_message" type="OneOfMessage" setter="set_oneof_message" getter="get_oneof_message">Proto description missing.</member>
+		<member name="nested_message" type="OuterNestedMessage" setter="set_nested_message" getter="get_nested_message">Proto description missing.</member>
+		<member name="well_known_types_message" type="GoogleWellKnownTypesMessage" setter="set_well_known_types_message" getter="get_well_known_types_message">Proto description missing.</member>
+		<member name="basic_enum" type="int" setter="set_basic_enum" getter="get_basic_enum">Proto description missing.</member>
+		<member name="dependency_message" type="DependencyMessage" setter="set_dependency_message" getter="get_dependency_message">Proto description missing.</member>
+		<member name="repeated_complex" type="RepeatedComplexMessage" setter="set_repeated_complex" getter="get_repeated_complex">Proto description missing.</member>
+		<member name="recursive" type="RecursiveMessage" setter="set_recursive" getter="get_recursive">Proto description missing.</member>
+		<member name="deeply_nested" type="DeeplyNestedMessage" setter="set_deeply_nested" getter="get_deeply_nested">Proto description missing.</member>
+	</members>
+</class>

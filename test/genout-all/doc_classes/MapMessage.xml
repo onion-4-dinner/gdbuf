@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MapMessage" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+Proto description missing.
+	</brief_description>
+	<description>
+Proto description missing.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="string_int_map" type="Dictionary" setter="set_string_int_map" getter="get_string_int_map">Proto description missing.</member>
+		<member name="int_msg_map" type="Dictionary" setter="set_int_msg_map" getter="get_int_msg_map">Proto description missing.</member>
+		<member name="string_string_map" type="Dictionary" setter="set_string_string_map" getter="get_string_string_map">Proto description missing.</member>
+	</members>
+</class>

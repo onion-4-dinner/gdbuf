@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpecialFieldTypesMessage" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+Proto description missing.
+	</brief_description>
+	<description>
+Proto description missing.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="optional_string" type="String" setter="set_optional_string" getter="get_optional_string">Proto description missing.</member>
+		<member name="repeated_int32" type="Array" setter="set_repeated_int32" getter="get_repeated_int32">Proto description missing.</member>
+		<member name="repeated_packed_double" type="Array" setter="set_repeated_packed_double" getter="get_repeated_packed_double">Proto description missing.</member>
+	</members>
+</class>
