@@ -1,7 +1,7 @@
 .PHONY: build-linux build-windows build-web build-android deps-update
 
 # Linux
-build-linux: build-linux-debug-single build-linux-release-single build-linux-debug-double build-linux-release-double
+build-linux: build-linux-debug-single build-linux-release-single
 
 build-linux-debug-single:
 	cmake -B build/linux/debug_single -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_SYSTEM_NAME=linux -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single -DCMAKE_TOOLCHAIN_FILE=cmake/x86_64-linux.toolchain.cmake
@@ -29,7 +29,7 @@ build-linux-release-double:
 	cp build/linux/release_double/bin/* build/linux/bin/
 
 # Windows
-build-windows: build-windows-debug-single build-windows-release-single build-windows-debug-double build-windows-release-double
+build-windows: build-windows-debug-single build-windows-release-single
 
 build-windows-debug-single:
 	cmake -B build/windows/debug_single -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single -DCMAKE_TOOLCHAIN_FILE=cmake/x86_64-windows.toolchain.cmake
@@ -56,7 +56,7 @@ build-windows-release-double:
 	cp build/windows/release_double/bin/* build/windows/bin/
 
 # Web
-build-web: build-web-debug-single build-web-release-single build-web-debug-double build-web-release-double
+build-web: build-web-debug-single build-web-release-single
 
 build-web-debug-single:
 	cmake -B build/web/debug_single -DCMAKE_TOOLCHAIN_FILE=cmake/web-wasm32.toolchain.cmake -DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single -DGODOTCPP_THREADS=OFF
@@ -83,7 +83,7 @@ build-web-release-double:
 	cp build/web/release_double/bin/* build/web/bin/
 
 # Android
-build-android: build-android-debug-single build-android-release-single build-android-debug-double build-android-release-double
+build-android: build-android-debug-single build-android-release-single
 
 build-android-debug-single:
 	cmake -B build/android/debug_single -DCMAKE_TOOLCHAIN_FILE=cmake/android.toolchain.cmake -DGODOTCPP_TARGET=template_debug -DGODOTCPP_PRECISION=single -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM_LEVEL=24
