@@ -73,6 +73,12 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform 
 		return fmt.Errorf("could not copy build environment to build directory: %w", err)
 	}
 
+	// Clean up the src directory in the build directory to avoid stale files
+	srcDir := filepath.Join(buildDir, "src")
+	if err := os.RemoveAll(srcDir); err != nil {
+		return fmt.Errorf("could not remove src directory in build directory: %w", err)
+	}
+
 	if err = copyFS(os.DirFS(generatedCppSourceDir), buildDir); err != nil {
 		return fmt.Errorf("could not copy custom build files to build directory: %w", err)
 	}
