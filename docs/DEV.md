@@ -10,6 +10,20 @@ The program operates in a linear pipeline:
 3.  **Code Generation**: Parses the descriptor set to understand the message structure, then executes Go `text/template` templates to generate Godot-specific C++ wrappers.
 4.  **GDExtension Compilation**: Orchestrates a CMake build to compile the generated wrappers + the embedded **Nanopb** library into a shared library. It uses a persistent build cache (in `~/.cache/gdbuf` or local `.gdbuf_cache`) to enable incremental builds.
 
+## Build Dependencies
+
+To successfully build `gdbuf` and compile GDExtensions for all supported platforms, your development environment needs specific dependencies. Some are required to be installed by you, while others are automatically managed by `gdbuf`.
+
+| Platform | User-Provided Dependencies | Managed by `gdbuf` (Automatic) |
+| :--- | :--- | :--- |
+| **All Platforms** | `go` (1.21+), `cmake` (3.16+), `protoc`, `make` or `ninja` | `godot-cpp`, `nanopb` |
+| **Linux** | `gcc` or `clang++` | - |
+| **Windows (Cross)** | MinGW-w64 (`x86_64-w64-mingw32-g++`) | - |
+| **Web (WASM)** | `python3` | `emsdk` (Emscripten SDK)* |
+| **Android** | - | `Android NDK` (r28b)* |
+
+*\* Managed dependencies are downloaded to the user cache directory (e.g., `~/.cache/gdbuf`) if the corresponding environment variables (`EMSDK` or `ANDROID_NDK_HOME`) are not set.*
+
 ## Codebase Structure
 
 ### `cmd` / Root
