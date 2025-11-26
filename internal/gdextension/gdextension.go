@@ -33,7 +33,7 @@ func (gde *GDExtensionBuilder) ExtractNanopbGenerator(dst string) error {
 	return copyFS(genFS, dst)
 }
 
-func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string, generateOnly bool) error {
+func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir, platform string, generateOnly bool) error {
 	// Determine build directory: UserCacheDir/gdbuf
 	userCacheDir, err := os.UserCacheDir()
 	var buildDir string
@@ -82,6 +82,7 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string, ge
 
 	// all files are in place, try to build
 	var buildTarget string
+	// Default to host OS
 	switch runtime.GOOS {
 	case "linux":
 		buildTarget = "build-linux"
@@ -93,7 +94,23 @@ func (gde *GDExtensionBuilder) Build(generatedCppSourceDir, outputDir string, ge
 		return fmt.Errorf("unsupported os: %s", runtime.GOOS)
 	}
 
+	if platform != "" {
+		switch platform {
+		case "linux":
+			buildTarget = "build-linux"
+		case "windows":
+			buildTarget = "build-windows"
+		case "web":
+			buildTarget = "build-web"
+		case "android":
+			buildTarget = "build-android"
+		default:
+			return fmt.Errorf("unsupported platform: %s", platform)
+		}
+	}
+
 	buildCmd := exec.Command("make", buildTarget)
+
 	buildCmd.Env = os.Environ()
 	buildCmd.Env = append(buildCmd.Env, fmt.Sprintf("WORKSPACE=%s", buildDir))
 	buildCmd.Dir = buildDir

@@ -38,7 +38,7 @@ Common Google types are automatically converted to native Godot types for ease o
 - **Value** → `Variant`
 - **ListValue** → `Array`
 
-### 4. Editor Documentation
+### 4. Editor Documentation (currently broken)
 Comments in your `.proto` files are converted into **Godot Editor Documentation**.
 - **Tooltips:** Hover over a property in the Inspector or use code completion in the script editor to see your comments.
 - **Formatting:** Standard protobuf comments (`// ...`) are captured and formatted.
